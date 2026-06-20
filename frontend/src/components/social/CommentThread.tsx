@@ -59,7 +59,7 @@ export function CommentThread({ poemId }: CommentThreadProps) {
                   <img
                     src={comment.author.avatarUrl || '/default-avatar.png'}
                     alt=""
-                    className="h-6 w-6 rounded-full object-cover"
+                    className="h-8 w-8 rounded-full object-cover"
                   />
                   <span className="font-sans text-sm font-medium text-ink hover:text-accent">
                     {comment.author.displayName}

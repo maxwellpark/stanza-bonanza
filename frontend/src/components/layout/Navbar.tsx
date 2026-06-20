@@ -62,13 +62,14 @@ export function Navbar() {
         </div>
 
         <button
-          className="flex flex-col gap-1 md:hidden"
+          className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center gap-1 md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
-          aria-label="Toggle menu"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
         >
-          <span className={cn('block h-0.5 w-5 bg-ink transition-transform', mobileOpen && 'translate-y-1.5 rotate-45')} />
-          <span className={cn('block h-0.5 w-5 bg-ink transition-opacity', mobileOpen && 'opacity-0')} />
-          <span className={cn('block h-0.5 w-5 bg-ink transition-transform', mobileOpen && '-translate-y-1.5 -rotate-45')} />
+          <span className={cn('block h-0.5 w-6 bg-ink transition-transform', mobileOpen && 'translate-y-1.5 rotate-45')} />
+          <span className={cn('block h-0.5 w-6 bg-ink transition-opacity', mobileOpen && 'opacity-0')} />
+          <span className={cn('block h-0.5 w-6 bg-ink transition-transform', mobileOpen && '-translate-y-1.5 -rotate-45')} />
         </button>
       </div>
 
@@ -81,13 +82,13 @@ export function Navbar() {
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-parchment-dark md:hidden"
           >
-            <div className="flex flex-col gap-2 px-4 py-3">
+            <div className="flex flex-col px-4 py-2">
               {publicLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileOpen(false)}
-                  className="font-sans text-sm text-feather transition-colors hover:text-ink"
+                  className="flex min-h-[44px] items-center font-sans text-base text-feather transition-colors hover:text-ink"
                 >
                   {link.label}
                 </Link>
@@ -96,7 +97,7 @@ export function Navbar() {
                 <Link
                   to="/feed"
                   onClick={() => setMobileOpen(false)}
-                  className="font-sans text-sm text-feather transition-colors hover:text-ink"
+                  className="flex min-h-[44px] items-center font-sans text-base text-feather transition-colors hover:text-ink"
                 >
                   Feed
                 </Link>
@@ -105,14 +106,14 @@ export function Navbar() {
                 <Link
                   to={`/profile/${user.id}`}
                   onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-2 pt-2 no-underline"
+                  className="flex min-h-[44px] items-center gap-2 border-t border-parchment-dark pt-2 no-underline"
                 >
                   <img
                     src={user.avatarUrl || '/default-avatar.png'}
                     alt=""
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-9 w-9 rounded-full object-cover"
                   />
-                  <span className="font-sans text-sm text-ink">{user.displayName}</span>
+                  <span className="font-sans text-base text-ink">{user.displayName}</span>
                 </Link>
               ) : (
                 <button
@@ -120,7 +121,7 @@ export function Navbar() {
                     setMobileOpen(false);
                     openLogin();
                   }}
-                  className="btn-primary mt-2 text-sm"
+                  className="btn-primary mt-2"
                 >
                   Sign In
                 </button>

@@ -94,8 +94,10 @@ export function NotificationsPanel() {
     <div ref={containerRef} className="relative">
       <button
         onClick={() => setIsOpen((o) => !o)}
-        className="relative text-feather transition-colors hover:text-ink"
+        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center text-feather transition-colors hover:text-ink"
         aria-label="Notifications"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
       >
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -114,7 +116,7 @@ export function NotificationsPanel() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-parchment-dark bg-white shadow-lg"
+            className="absolute right-0 top-full z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-parchment-dark bg-white shadow-lg"
           >
             <div className="flex items-center justify-between border-b border-parchment-dark px-4 py-3">
               <h3 className="font-sans text-sm font-semibold text-ink">Notifications</h3>
