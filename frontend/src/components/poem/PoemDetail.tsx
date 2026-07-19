@@ -17,8 +17,24 @@ interface PoemDetailProps {
 
 export function PoemDetail({ poem }: PoemDetailProps) {
   var [extendOpen, setExtendOpen] = useState(false);
+  var [shared, setShared] = useState(false);
   var { isAuthenticated, user } = useAuthStore();
   var { openLogin } = useUIStore();
+
+  async function handleShare() {
+    var url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: poem.title, url });
+        return;
+      } catch {
+        // user cancelled or share failed; fall through to copy
+      }
+    }
+    await navigator.clipboard.writeText(url);
+    setShared(true);
+    setTimeout(() => setShared(false), 2000);
+  }
 
   var stanzas = poem.stanzas ?? [];
   var pendingStanzas = stanzas.filter((s) => s.status === 'pending');
@@ -109,15 +125,13 @@ export function PoemDetail({ poem }: PoemDetailProps) {
         </span>
 
         <button
-          className="font-sans text-sm text-feather transition-colors hover:text-ink"
-          onClick={() => {
-            navigator.clipboard.writeText(window.location.href);
-            alert('Link copied!');
-          }}
+          onClick={handleShare}
+          className="flex items-center gap-1 font-sans text-sm text-feather transition-colors hover:text-ink"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
           </svg>
+          {shared && <span className="text-xs">Copied</span>}
         </button>
       </div>
 
