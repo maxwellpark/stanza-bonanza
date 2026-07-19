@@ -37,6 +37,7 @@ type Poem struct {
 	ApprovalMode    ApprovalMode `json:"approvalMode"`
 	MaxStanzas      *int         `json:"maxStanzas"`
 	IsHallOfFame    bool         `json:"isHallOfFame"`
+	Published       bool         `json:"published"`
 	LikeCount       int          `json:"likeCount"`
 	StanzaCount     int          `json:"stanzaCount"`
 	CommentCount    int          `json:"commentCount"`

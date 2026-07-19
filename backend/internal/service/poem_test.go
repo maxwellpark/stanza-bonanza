@@ -49,6 +49,14 @@ func (m *mockPoemStore) ListHallOfFame(ctx context.Context, page domain.Paginati
 	poems, _ := args.Get(0).([]domain.Poem)
 	return poems, args.Int(1), args.Error(2)
 }
+func (m *mockPoemStore) ListDrafts(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
+	args := m.Called(ctx, userID, page)
+	poems, _ := args.Get(0).([]domain.Poem)
+	return poems, args.Int(1), args.Error(2)
+}
+func (m *mockPoemStore) Publish(ctx context.Context, id uuid.UUID) error {
+	return m.Called(ctx, id).Error(0)
+}
 func (m *mockPoemStore) Update(ctx context.Context, poem *domain.Poem) error {
 	return m.Called(ctx, poem).Error(0)
 }
@@ -119,7 +127,7 @@ func TestPoemService_Create_WithTags(t *testing.T) {
 	tags.On("SetForPoem", mock.Anything, mock.Anything, []string{"nature", "haiku"}).Return(nil)
 	tags.On("ListForPoem", mock.Anything, mock.Anything).Return([]string{"haiku", "nature"}, nil)
 
-	poem, err := svc.Create(context.Background(), uuid.New(), "T", "", domain.FormatHaiku, domain.ApprovalOpen, nil, []string{"nature", "haiku"})
+	poem, err := svc.Create(context.Background(), uuid.New(), "T", "", domain.FormatHaiku, domain.ApprovalOpen, nil, []string{"nature", "haiku"}, true)
 	require.NoError(t, err)
 	assert.Equal(t, []string{"haiku", "nature"}, poem.Tags)
 	tags.AssertCalled(t, "SetForPoem", mock.Anything, mock.Anything, []string{"nature", "haiku"})
@@ -136,7 +144,7 @@ func TestPoemService_Create_Success(t *testing.T) {
 	userID := uuid.New()
 	poems.On("Create", mock.Anything, mock.AnythingOfType("*domain.Poem")).Return(nil)
 
-	poem, err := svc.Create(context.Background(), userID, "Test Poem", "a poem", domain.FormatFreeVerse, domain.ApprovalOpen, nil, nil)
+	poem, err := svc.Create(context.Background(), userID, "Test Poem", "a poem", domain.FormatFreeVerse, domain.ApprovalOpen, nil, nil, true)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Poem", poem.Title)
 	assert.Equal(t, userID, poem.AuthorID)
@@ -149,7 +157,7 @@ func TestPoemService_Create_StoreError(t *testing.T) {
 
 	poems.On("Create", mock.Anything, mock.Anything).Return(errors.New("db error"))
 
-	_, err := svc.Create(context.Background(), uuid.New(), "Title", "", domain.FormatHaiku, domain.ApprovalOpen, nil, nil)
+	_, err := svc.Create(context.Background(), uuid.New(), "Title", "", domain.FormatHaiku, domain.ApprovalOpen, nil, nil, true)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "creating poem")
 }
@@ -183,6 +191,19 @@ func TestPoemService_Get_NotFound(t *testing.T) {
 	_, err := svc.Get(context.Background(), uuid.New(), uuid.Nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "poem not found")
+}
+
+func TestPoemService_Get_DraftHiddenFromNonAuthor(t *testing.T) {
+	poems := &mockPoemStore{}
+	svc := newPoemSvc(poems, &mockStanzaStore{}, &mockPoemNotifStore{})
+
+	poemID := uuid.New()
+	draft := &domain.Poem{ID: poemID, AuthorID: uuid.New(), Published: false}
+	poems.On("GetByID", mock.Anything, poemID).Return(draft, nil)
+
+	_, err := svc.Get(context.Background(), poemID, uuid.New())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
 }
 
 // SubmitStanza tests
