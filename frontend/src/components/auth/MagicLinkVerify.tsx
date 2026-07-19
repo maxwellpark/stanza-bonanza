@@ -23,7 +23,7 @@ export function MagicLinkVerify() {
 
     async function verify() {
       try {
-        await api.get(`/auth/magic-link/verify?token=${encodeURIComponent(token!)}`);
+        await api.post('/auth/magic-link/verify', { token });
         if (cancelled) {
           return;
         }

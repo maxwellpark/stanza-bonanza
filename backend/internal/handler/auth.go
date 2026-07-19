@@ -58,13 +58,17 @@ func (h *AuthHandler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) VerifyMagicLink(w http.ResponseWriter, r *http.Request) {
-	var token = r.URL.Query().Get("token")
-	if token == "" {
+	// Token comes in the body, not the URL, so it doesn't land in access logs
+	// or the Referer header.
+	var body struct {
+		Token string `json:"token"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Token == "" {
 		respondError(w, http.StatusBadRequest, "token is required")
 		return
 	}
 
-	sessionToken, user, err := h.svc.VerifyMagicLink(r.Context(), token)
+	sessionToken, user, err := h.svc.VerifyMagicLink(r.Context(), body.Token)
 	if err != nil {
 		respondError(w, http.StatusUnauthorized, "invalid or expired magic link")
 		return
