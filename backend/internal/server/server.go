@@ -66,6 +66,7 @@ func (s *Server) setupRoutes() {
 	poemRepo := repository.NewPoemRepository(s.db)
 	stanzaRepo := repository.NewStanzaRepository(s.db)
 	likeRepo := repository.NewLikeRepository(s.db)
+	stanzaLikeRepo := repository.NewStanzaLikeRepository(s.db)
 	commentRepo := repository.NewCommentRepository(s.db)
 	followRepo := repository.NewFollowRepository(s.db)
 	notifRepo := repository.NewNotificationRepository(s.db)
@@ -74,8 +75,8 @@ func (s *Server) setupRoutes() {
 	tutorialRepo := repository.NewTutorialRepository(s.db)
 
 	authSvc := service.NewAuthService(userRepo, sessionRepo, magicLinkRepo, webAuthnRepo, s.cfg)
-	poemSvc := service.NewPoemService(poemRepo, stanzaRepo, notifRepo, likeRepo, tagRepo)
-	socialSvc := service.NewSocialService(likeRepo, commentRepo, followRepo, notifRepo, poemRepo)
+	poemSvc := service.NewPoemService(poemRepo, stanzaRepo, notifRepo, likeRepo, tagRepo, stanzaLikeRepo)
+	socialSvc := service.NewSocialService(likeRepo, stanzaLikeRepo, commentRepo, followRepo, notifRepo, poemRepo)
 	tutorialSvc := service.NewTutorialService(tutorialRepo)
 
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -117,6 +118,7 @@ func (s *Server) setupRoutes() {
 				r.Get("/stanzas", poemHandler.ListStanzas)
 				r.With(authMiddleware).Post("/stanzas", poemHandler.SubmitStanza)
 				r.With(authMiddleware).Put("/stanzas/{stanzaID}", poemHandler.ReviewStanza)
+				r.With(authMiddleware).Post("/stanzas/{stanzaID}/like", socialHandler.ToggleStanzaLike)
 
 				// Social on poems
 				r.With(authMiddleware).Post("/like", socialHandler.ToggleLike)

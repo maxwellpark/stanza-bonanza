@@ -23,6 +23,10 @@ func (m *mockSocialService) ToggleLike(ctx context.Context, userID, poemID uuid.
 	args := m.Called(ctx, userID, poemID)
 	return args.Bool(0), args.Error(1)
 }
+func (m *mockSocialService) ToggleStanzaLike(ctx context.Context, userID, stanzaID uuid.UUID) (bool, error) {
+	args := m.Called(ctx, userID, stanzaID)
+	return args.Bool(0), args.Error(1)
+}
 func (m *mockSocialService) AddComment(ctx context.Context, userID, poemID uuid.UUID, parentID *uuid.UUID, text string) (*domain.Comment, error) {
 	args := m.Called(ctx, userID, poemID, parentID, text)
 	c, _ := args.Get(0).(*domain.Comment)

@@ -14,6 +14,7 @@ import (
 
 type socialService interface {
 	ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
+	ToggleStanzaLike(ctx context.Context, userID, stanzaID uuid.UUID) (bool, error)
 	AddComment(ctx context.Context, userID, poemID uuid.UUID, parentID *uuid.UUID, text string) (*domain.Comment, error)
 	DeleteComment(ctx context.Context, userID, commentID uuid.UUID) error
 	ListComments(ctx context.Context, poemID uuid.UUID, page domain.PaginationParams) ([]domain.Comment, int, error)
@@ -46,6 +47,28 @@ func (h *SocialHandler) ToggleLike(w http.ResponseWriter, r *http.Request) {
 	}
 
 	liked, err := h.svc.ToggleLike(r.Context(), userID, poemID)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to toggle like")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]bool{"liked": liked})
+}
+
+func (h *SocialHandler) ToggleStanzaLike(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	stanzaID, err := uuid.Parse(chi.URLParam(r, "stanzaID"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid stanza ID")
+		return
+	}
+
+	liked, err := h.svc.ToggleStanzaLike(r.Context(), userID, stanzaID)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to toggle like")
 		return
