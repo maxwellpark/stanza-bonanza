@@ -64,5 +64,7 @@ type Stanza struct {
 	Position       int          `json:"position"`
 	LiteraryDevice string       `json:"literaryDevice,omitempty"`
 	Status         StanzaStatus `json:"status"`
+	LikeCount      int          `json:"likeCount"`
+	LikedByMe      bool         `json:"likedByMe"`
 	CreatedAt      time.Time    `json:"createdAt"`
 }

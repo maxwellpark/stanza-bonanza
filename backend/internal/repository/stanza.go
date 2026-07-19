@@ -34,7 +34,7 @@ func (r *StanzaRepository) Create(ctx context.Context, stanza *domain.Stanza) er
 
 func (r *StanzaRepository) ListByPoem(ctx context.Context, poemID uuid.UUID) ([]domain.Stanza, error) {
 	rows, err := r.pool.Query(ctx,
-		`SELECT s.id, s.poem_id, s.author_id, s.text, s.position, s.literary_device, s.status, s.created_at,
+		`SELECT s.id, s.poem_id, s.author_id, s.text, s.position, s.literary_device, s.status, s.like_count, s.created_at,
 		        u.id, u.display_name, u.email, u.bio, u.avatar_url, u.is_verified, u.created_at, u.updated_at
 		 FROM stanzas s JOIN users u ON u.id = s.author_id
 		 WHERE s.poem_id = $1 ORDER BY s.position ASC`, poemID,
@@ -49,7 +49,7 @@ func (r *StanzaRepository) ListByPoem(ctx context.Context, poemID uuid.UUID) ([]
 		var s domain.Stanza
 		var author domain.User
 		err := rows.Scan(
-			&s.ID, &s.PoemID, &s.AuthorID, &s.Text, &s.Position, &s.LiteraryDevice, &s.Status, &s.CreatedAt,
+			&s.ID, &s.PoemID, &s.AuthorID, &s.Text, &s.Position, &s.LiteraryDevice, &s.Status, &s.LikeCount, &s.CreatedAt,
 			&author.ID, &author.DisplayName, &author.Email, &author.Bio, &author.AvatarURL,
 			&author.IsVerified, &author.CreatedAt, &author.UpdatedAt,
 		)

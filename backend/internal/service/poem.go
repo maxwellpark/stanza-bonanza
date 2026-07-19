@@ -43,21 +43,27 @@ type tagStore interface {
 	ListForPoems(ctx context.Context, poemIDs []uuid.UUID) (map[uuid.UUID][]string, error)
 }
 
-type PoemService struct {
-	poems   poemStore
-	stanzas stanzaStore
-	notifs  poemNotifStore
-	likes   likeChecker
-	tags    tagStore
+type stanzaLikeChecker interface {
+	LikedStanzaIDs(ctx context.Context, userID uuid.UUID, stanzaIDs []uuid.UUID) (map[uuid.UUID]bool, error)
 }
 
-func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository, likes *repository.LikeRepository, tags *repository.TagRepository) *PoemService {
+type PoemService struct {
+	poems       poemStore
+	stanzas     stanzaStore
+	notifs      poemNotifStore
+	likes       likeChecker
+	tags        tagStore
+	stanzaLikes stanzaLikeChecker
+}
+
+func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository, likes *repository.LikeRepository, tags *repository.TagRepository, stanzaLikes *repository.StanzaLikeRepository) *PoemService {
 	return &PoemService{
-		poems:   poems,
-		stanzas: stanzas,
-		notifs:  notifs,
-		likes:   likes,
-		tags:    tags,
+		poems:       poems,
+		stanzas:     stanzas,
+		notifs:      notifs,
+		likes:       likes,
+		tags:        tags,
+		stanzaLikes: stanzaLikes,
 	}
 }
 
@@ -118,6 +124,18 @@ func (s *PoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.
 	if viewerID != uuid.Nil && s.likes != nil {
 		if liked, err := s.likes.Exists(ctx, viewerID, id); err == nil {
 			poem.LikedByMe = liked
+		}
+	}
+
+	if viewerID != uuid.Nil && s.stanzaLikes != nil && len(poem.Stanzas) > 0 {
+		ids := make([]uuid.UUID, len(poem.Stanzas))
+		for i := range poem.Stanzas {
+			ids[i] = poem.Stanzas[i].ID
+		}
+		if liked, err := s.stanzaLikes.LikedStanzaIDs(ctx, viewerID, ids); err == nil {
+			for i := range poem.Stanzas {
+				poem.Stanzas[i].LikedByMe = liked[poem.Stanzas[i].ID]
+			}
 		}
 	}
 

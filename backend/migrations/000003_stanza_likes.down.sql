@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS stanza_likes;
+ALTER TABLE stanzas DROP COLUMN IF EXISTS like_count;

@@ -100,6 +100,13 @@ func (m *mockSocialPoemStore) IncrementCounter(ctx context.Context, id uuid.UUID
 	return m.Called(ctx, id, column, delta).Error(0)
 }
 
+type mockStanzaLikeStore struct{ mock.Mock }
+
+func (m *mockStanzaLikeStore) ToggleLike(ctx context.Context, userID, stanzaID uuid.UUID) (bool, error) {
+	args := m.Called(ctx, userID, stanzaID)
+	return args.Bool(0), args.Error(1)
+}
+
 func newSocialSvc(likes *mockLikeStore, comments *mockCommentStore, follows *mockFollowStore, notifs *mockSocialNotifStore, poems *mockSocialPoemStore) *SocialService {
 	return &SocialService{
 		likes:    likes,
@@ -146,6 +153,20 @@ func TestSocialService_ToggleLike_Unlike(t *testing.T) {
 	liked, err := svc.ToggleLike(context.Background(), userID, poemID)
 	require.NoError(t, err)
 	assert.False(t, liked)
+}
+
+func TestSocialService_ToggleStanzaLike(t *testing.T) {
+	stanzaLikes := &mockStanzaLikeStore{}
+	svc := newSocialSvc(&mockLikeStore{}, &mockCommentStore{}, &mockFollowStore{}, &mockSocialNotifStore{}, &mockSocialPoemStore{})
+	svc.stanzaLikes = stanzaLikes
+
+	userID := uuid.New()
+	stanzaID := uuid.New()
+	stanzaLikes.On("ToggleLike", mock.Anything, userID, stanzaID).Return(true, nil)
+
+	liked, err := svc.ToggleStanzaLike(context.Background(), userID, stanzaID)
+	require.NoError(t, err)
+	assert.True(t, liked)
 }
 
 // AddComment tests

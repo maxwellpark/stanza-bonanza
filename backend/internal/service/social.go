@@ -14,6 +14,10 @@ type likeStore interface {
 	Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
 }
 
+type stanzaLikeStore interface {
+	ToggleLike(ctx context.Context, userID, stanzaID uuid.UUID) (bool, error)
+}
+
 type commentStore interface {
 	Create(ctx context.Context, comment *domain.Comment) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Comment, error)
@@ -41,27 +45,38 @@ type socialPoemStore interface {
 }
 
 type SocialService struct {
-	likes    likeStore
-	comments commentStore
-	follows  followStore
-	notifs   socialNotifStore
-	poems    socialPoemStore
+	likes       likeStore
+	stanzaLikes stanzaLikeStore
+	comments    commentStore
+	follows     followStore
+	notifs      socialNotifStore
+	poems       socialPoemStore
 }
 
 func NewSocialService(
 	likes *repository.LikeRepository,
+	stanzaLikes *repository.StanzaLikeRepository,
 	comments *repository.CommentRepository,
 	follows *repository.FollowRepository,
 	notifs *repository.NotificationRepository,
 	poems *repository.PoemRepository,
 ) *SocialService {
 	return &SocialService{
-		likes:    likes,
-		comments: comments,
-		follows:  follows,
-		notifs:   notifs,
-		poems:    poems,
+		likes:       likes,
+		stanzaLikes: stanzaLikes,
+		comments:    comments,
+		follows:     follows,
+		notifs:      notifs,
+		poems:       poems,
 	}
+}
+
+func (s *SocialService) ToggleStanzaLike(ctx context.Context, userID, stanzaID uuid.UUID) (bool, error) {
+	liked, err := s.stanzaLikes.ToggleLike(ctx, userID, stanzaID)
+	if err != nil {
+		return false, fmt.Errorf("toggling stanza like: %w", err)
+	}
+	return liked, nil
 }
 
 func (s *SocialService) ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
