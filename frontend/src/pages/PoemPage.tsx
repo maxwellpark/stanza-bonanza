@@ -1,12 +1,18 @@
 import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePoem } from '@/hooks/usePoems';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { PoemDetail } from '@/components/poem/PoemDetail';
 import { Link } from 'react-router-dom';
 
 export function PoemPage() {
   var { poemId } = useParams<{ poemId: string }>();
   var { data: poem, isLoading, isError } = usePoem(poemId ?? '');
+
+  usePageMeta(
+    poem ? `${poem.title} — Stanza Bonanza` : 'Stanza Bonanza',
+    poem?.description || poem?.stanzas?.[0]?.text?.slice(0, 160),
+  );
 
   if (isLoading) {
     return (
