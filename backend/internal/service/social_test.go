@@ -16,11 +16,9 @@ import (
 
 type mockLikeStore struct{ mock.Mock }
 
-func (m *mockLikeStore) Create(ctx context.Context, like *domain.Like) error {
-	return m.Called(ctx, like).Error(0)
-}
-func (m *mockLikeStore) Delete(ctx context.Context, userID, poemID uuid.UUID) error {
-	return m.Called(ctx, userID, poemID).Error(0)
+func (m *mockLikeStore) ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
+	args := m.Called(ctx, userID, poemID)
+	return args.Bool(0), args.Error(1)
 }
 func (m *mockLikeStore) Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
 	args := m.Called(ctx, userID, poemID)
@@ -125,9 +123,7 @@ func TestSocialService_ToggleLike_Like(t *testing.T) {
 	poemID := uuid.New()
 	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
 
-	likes.On("Exists", mock.Anything, userID, poemID).Return(false, nil)
-	likes.On("Create", mock.Anything, mock.AnythingOfType("*domain.Like")).Return(nil)
-	poems.On("IncrementCounter", mock.Anything, poemID, "like_count", 1).Return(nil)
+	likes.On("ToggleLike", mock.Anything, userID, poemID).Return(true, nil)
 	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
 	notifs.On("Create", mock.Anything, mock.AnythingOfType("*domain.Notification")).Return(nil)
 
@@ -145,9 +141,7 @@ func TestSocialService_ToggleLike_Unlike(t *testing.T) {
 	userID := uuid.New()
 	poemID := uuid.New()
 
-	likes.On("Exists", mock.Anything, userID, poemID).Return(true, nil)
-	likes.On("Delete", mock.Anything, userID, poemID).Return(nil)
-	poems.On("IncrementCounter", mock.Anything, poemID, "like_count", -1).Return(nil)
+	likes.On("ToggleLike", mock.Anything, userID, poemID).Return(false, nil)
 
 	liked, err := svc.ToggleLike(context.Background(), userID, poemID)
 	require.NoError(t, err)
@@ -168,7 +162,6 @@ func TestSocialService_AddComment_Success(t *testing.T) {
 	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
 
 	comments.On("Create", mock.Anything, mock.AnythingOfType("*domain.Comment")).Return(nil)
-	poems.On("IncrementCounter", mock.Anything, poemID, "comment_count", 1).Return(nil)
 	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
 	notifs.On("Create", mock.Anything, mock.AnythingOfType("*domain.Notification")).Return(nil)
 
@@ -190,7 +183,6 @@ func TestSocialService_AddComment_WithParent(t *testing.T) {
 	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
 
 	comments.On("Create", mock.Anything, mock.AnythingOfType("*domain.Comment")).Return(nil)
-	poems.On("IncrementCounter", mock.Anything, poemID, "comment_count", 1).Return(nil)
 	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
 	notifs.On("Create", mock.Anything, mock.AnythingOfType("*domain.Notification")).Return(nil)
 
@@ -214,7 +206,6 @@ func TestSocialService_DeleteComment_Success(t *testing.T) {
 
 	comments.On("GetByID", mock.Anything, commentID).Return(comment, nil)
 	comments.On("Delete", mock.Anything, commentID).Return(nil)
-	poems.On("IncrementCounter", mock.Anything, poemID, "comment_count", -1).Return(nil)
 
 	err := svc.DeleteComment(context.Background(), userID, commentID)
 	require.NoError(t, err)

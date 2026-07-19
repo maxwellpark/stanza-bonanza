@@ -10,8 +10,7 @@ import (
 )
 
 type likeStore interface {
-	Create(ctx context.Context, like *domain.Like) error
-	Delete(ctx context.Context, userID, poemID uuid.UUID) error
+	ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
 	Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
 }
 
@@ -66,27 +65,13 @@ func NewSocialService(
 }
 
 func (s *SocialService) ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
-	exists, err := s.likes.Exists(ctx, userID, poemID)
+	liked, err := s.likes.ToggleLike(ctx, userID, poemID)
 	if err != nil {
-		return false, fmt.Errorf("checking like: %w", err)
+		return false, fmt.Errorf("toggling like: %w", err)
 	}
-
-	if exists {
-		if err := s.likes.Delete(ctx, userID, poemID); err != nil {
-			return false, fmt.Errorf("removing like: %w", err)
-		}
-		_ = s.poems.IncrementCounter(ctx, poemID, "like_count", -1)
+	if !liked {
 		return false, nil
 	}
-
-	var like = &domain.Like{
-		UserID: userID,
-		PoemID: poemID,
-	}
-	if err := s.likes.Create(ctx, like); err != nil {
-		return false, fmt.Errorf("adding like: %w", err)
-	}
-	_ = s.poems.IncrementCounter(ctx, poemID, "like_count", 1)
 
 	poem, err := s.poems.GetByID(ctx, poemID)
 	if err == nil && poem.AuthorID != userID {
@@ -112,8 +97,6 @@ func (s *SocialService) AddComment(ctx context.Context, userID, poemID uuid.UUID
 	if err := s.comments.Create(ctx, comment); err != nil {
 		return nil, fmt.Errorf("creating comment: %w", err)
 	}
-
-	_ = s.poems.IncrementCounter(ctx, poemID, "comment_count", 1)
 
 	poem, err := s.poems.GetByID(ctx, poemID)
 	if err == nil && poem.AuthorID != userID {
@@ -141,7 +124,6 @@ func (s *SocialService) DeleteComment(ctx context.Context, userID, commentID uui
 		return fmt.Errorf("deleting comment: %w", err)
 	}
 
-	_ = s.poems.IncrementCounter(ctx, comment.PoemID, "comment_count", -1)
 	return nil
 }
 

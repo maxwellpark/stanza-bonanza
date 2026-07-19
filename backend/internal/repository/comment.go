@@ -25,13 +25,26 @@ func (r *CommentRepository) Create(ctx context.Context, comment *domain.Comment)
 	comment.CreatedAt = now
 	comment.UpdatedAt = now
 
-	_, err := r.pool.Exec(ctx,
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO comments (id, poem_id, author_id, parent_id, text, created_at, updated_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		comment.ID, comment.PoemID, comment.AuthorID, comment.ParentID,
 		comment.Text, comment.CreatedAt, comment.UpdatedAt,
-	)
-	return err
+	); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx,
+		`UPDATE poems SET comment_count = comment_count + 1 WHERE id = $1`, comment.PoemID,
+	); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
 }
 
 func (r *CommentRepository) ListByPoem(ctx context.Context, poemID uuid.UUID, page domain.PaginationParams) ([]domain.Comment, int, error) {
@@ -76,7 +89,12 @@ func (r *CommentRepository) ListByPoem(ctx context.Context, poemID uuid.UUID, pa
 }
 
 func (r *CommentRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	_, err := r.pool.Exec(ctx, `DELETE FROM comments WHERE id = $1`, id)
+	// Delete and decrement in one statement so the count can't drift.
+	_, err := r.pool.Exec(ctx,
+		`WITH deleted AS (DELETE FROM comments WHERE id = $1 RETURNING poem_id)
+		 UPDATE poems SET comment_count = comment_count - 1
+		 WHERE id = (SELECT poem_id FROM deleted)`, id,
+	)
 	return err
 }
 
