@@ -11,7 +11,7 @@ function apiJson<T>(data: T) {
   return HttpResponse.json({ data });
 }
 
-var mockNotifications: PaginatedResponse<Notification> = {
+const mockNotifications: PaginatedResponse<Notification> = {
   items: [
     {
       id: 'notif-1',
@@ -57,7 +57,7 @@ beforeEach(() => {
 
 describe('useNotifications', () => {
   it('returns paginated notification items', async () => {
-    var { result } = renderHook(() => useNotifications(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useNotifications(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -66,21 +66,21 @@ describe('useNotifications', () => {
   });
 
   it('includes the notification type and read flag', async () => {
-    var { result } = renderHook(() => useNotifications(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useNotifications(), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
-    var first = result.current.data!.items[0];
+    const first = result.current.data!.items[0];
     expect(first.type).toBe('like');
     expect(first.read).toBe(false);
 
-    var second = result.current.data!.items[1];
+    const second = result.current.data!.items[1];
     expect(second.type).toBe('follow');
     expect(second.read).toBe(true);
   });
 
   it('passes the page param in the query string', async () => {
-    var capturedUrl = '';
+    let capturedUrl = '';
     server.use(
       http.get('/api/v1/notifications', ({ request }) => {
         capturedUrl = request.url;
@@ -88,7 +88,7 @@ describe('useNotifications', () => {
       }),
     );
 
-    var { result } = renderHook(() => useNotifications({ page: 3 }), { wrapper: Wrapper });
+    const { result } = renderHook(() => useNotifications({ page: 3 }), { wrapper: Wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
@@ -98,7 +98,7 @@ describe('useNotifications', () => {
 
 describe('useToggleFollow', () => {
   it('calls POST /api/v1/users/:userId/follow', async () => {
-    var capturedUrl = '';
+    let capturedUrl = '';
     server.use(
       http.post('/api/v1/users/:userId/follow', ({ request }) => {
         capturedUrl = request.url;
@@ -106,7 +106,7 @@ describe('useToggleFollow', () => {
       }),
     );
 
-    var { result } = renderHook(() => useToggleFollow('user-99'), { wrapper: Wrapper });
+    const { result } = renderHook(() => useToggleFollow('user-99'), { wrapper: Wrapper });
 
     result.current.mutate();
 
@@ -120,7 +120,7 @@ describe('useToggleFollow', () => {
       http.post('/api/v1/users/:userId/follow', () => apiJson({ following: false })),
     );
 
-    var { result } = renderHook(() => useToggleFollow('user-5'), { wrapper: Wrapper });
+    const { result } = renderHook(() => useToggleFollow('user-5'), { wrapper: Wrapper });
 
     result.current.mutate();
 

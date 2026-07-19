@@ -10,13 +10,13 @@ interface CommentThreadProps {
 }
 
 export function CommentThread({ poemId }: CommentThreadProps) {
-  var [text, setText] = useState('');
-  var { data, isLoading } = useComments(poemId);
-  var addComment = useAddComment(poemId);
-  var { isAuthenticated } = useAuthStore();
-  var { openLogin } = useUIStore();
+  const [text, setText] = useState('');
+  const { data, isLoading } = useComments(poemId);
+  const addComment = useAddComment(poemId);
+  const { isAuthenticated } = useAuthStore();
+  const { openLogin } = useUIStore();
 
-  var comments = data?.items ?? [];
+  const comments = data?.items ?? [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

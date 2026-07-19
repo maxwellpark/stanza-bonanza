@@ -13,7 +13,7 @@ import { TutorialDetailPage } from '@/pages/TutorialDetailPage';
 import { MagicLinkVerify } from '@/components/auth/MagicLinkVerify';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
-export var router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
     element: <AppShell />,
     children: [

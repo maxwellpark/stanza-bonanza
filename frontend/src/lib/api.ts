@@ -4,7 +4,7 @@ const BASE_URL = '/api/v1';
 
 class ApiClient {
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    var response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetch(`${BASE_URL}${path}`, {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
@@ -13,7 +13,7 @@ class ApiClient {
       ...options,
     });
 
-    var json: ApiResponse<T> = await response.json();
+    const json: ApiResponse<T> = await response.json();
 
     if (!response.ok || json.error) {
       throw new Error(json.error || `Request failed: ${response.status}`);

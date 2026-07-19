@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToggleLike } from '@/hooks/useSocial';
 import { useAuthStore } from '@/stores/authStore';
@@ -11,22 +11,22 @@ interface LikeButtonProps {
 }
 
 export function LikeButton({ poemId, likeCount, isLiked: initialLiked }: LikeButtonProps) {
-  var [optimisticLiked, setOptimisticLiked] = useState(initialLiked ?? false);
-  var [optimisticCount, setOptimisticCount] = useState(likeCount);
-  var [animKey, setAnimKey] = useState(0);
-  var mutation = useToggleLike(poemId);
-  var { isAuthenticated } = useAuthStore();
-  var { openLogin } = useUIStore();
+  const mutation = useToggleLike(poemId);
+  const { isAuthenticated } = useAuthStore();
+  const { openLogin } = useUIStore();
+  const [optimisticLiked, setOptimisticLiked] = useState(initialLiked ?? false);
+  const [optimisticCount, setOptimisticCount] = useState(likeCount);
+  const [animKey, setAnimKey] = useState(0);
 
   // Resync to server truth when fresh props arrive (e.g. after a refetch),
-  // but not mid-mutation or the optimistic update would be clobbered.
-  useEffect(() => {
-    if (mutation.isPending) {
-      return;
-    }
+  // adjusting state during render (not in an effect). Skip mid-mutation or the
+  // optimistic update would be clobbered.
+  const [synced, setSynced] = useState({ liked: initialLiked ?? false, count: likeCount });
+  if (!mutation.isPending && (synced.liked !== (initialLiked ?? false) || synced.count !== likeCount)) {
+    setSynced({ liked: initialLiked ?? false, count: likeCount });
     setOptimisticLiked(initialLiked ?? false);
     setOptimisticCount(likeCount);
-  }, [initialLiked, likeCount, mutation.isPending]);
+  }
 
   function handleClick() {
     if (!isAuthenticated) {
@@ -34,7 +34,7 @@ export function LikeButton({ poemId, likeCount, isLiked: initialLiked }: LikeBut
       return;
     }
 
-    var nextLiked = !optimisticLiked;
+    const nextLiked = !optimisticLiked;
     setOptimisticLiked(nextLiked);
     setOptimisticCount((c) => c + (nextLiked ? 1 : -1));
 

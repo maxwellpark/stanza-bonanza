@@ -3,7 +3,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { PoemEditor } from '@/components/poem/PoemEditor';
 
 export function CreatePoemPage() {
-  var { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStore();
 
   if (isLoading) {
     return null;

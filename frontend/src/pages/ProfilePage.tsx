@@ -19,15 +19,15 @@ import type { User } from '@/types/user';
 type Tab = 'poems' | 'followers' | 'following';
 
 function RegisterPasskeyButton() {
-  var [status, setStatus] = useState<'idle' | 'pending' | 'done' | 'error'>('idle');
-  var [errorMsg, setErrorMsg] = useState('');
+  const [status, setStatus] = useState<'idle' | 'pending' | 'done' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
   async function handleRegister() {
     setStatus('pending');
     setErrorMsg('');
     try {
-      var options = await api.post<Parameters<typeof startRegistration>[0]>('/auth/register/begin');
-      var result = await startRegistration({ optionsJSON: options as any });
+      const optionsJSON = await api.post<Parameters<typeof startRegistration>[0]['optionsJSON']>('/auth/register/begin');
+      const result = await startRegistration({ optionsJSON });
       await api.post('/auth/register/finish', result);
       setStatus('done');
     } catch (err) {
@@ -55,12 +55,12 @@ function RegisterPasskeyButton() {
 }
 
 function EditProfileForm({ user, onDone }: { user: User; onDone: () => void }) {
-  var [displayName, setDisplayName] = useState(user.displayName);
-  var [bio, setBio] = useState(user.bio ?? '');
-  var [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? '');
-  var [error, setError] = useState('');
-  var updateProfile = useUpdateProfile();
-  var { setUser } = useAuthStore();
+  const [displayName, setDisplayName] = useState(user.displayName);
+  const [bio, setBio] = useState(user.bio ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? '');
+  const [error, setError] = useState('');
+  const updateProfile = useUpdateProfile();
+  const { setUser } = useAuthStore();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,16 +144,16 @@ function UserList({ users }: { users: User[] }) {
 }
 
 export function ProfilePage() {
-  var { userId } = useParams<{ userId: string }>();
-  var { user: me, isAuthenticated } = useAuthStore();
-  var [activeTab, setActiveTab] = useState<Tab>('poems');
-  var [editing, setEditing] = useState(false);
+  const { userId } = useParams<{ userId: string }>();
+  const { user: me, isAuthenticated } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<Tab>('poems');
+  const [editing, setEditing] = useState(false);
 
-  var { data: profile, isLoading } = useUserProfile(userId ?? '');
-  var { data: poemsData } = useUserPoems(userId ?? '');
-  var { data: followersData } = useFollowers(userId ?? '', { pageSize: 50 });
-  var { data: followingData } = useFollowing(userId ?? '', { pageSize: 50 });
-  var toggleFollow = useToggleFollow(userId ?? '');
+  const { data: profile, isLoading } = useUserProfile(userId ?? '');
+  const { data: poemsData } = useUserPoems(userId ?? '');
+  const { data: followersData } = useFollowers(userId ?? '', { pageSize: 50 });
+  const { data: followingData } = useFollowing(userId ?? '', { pageSize: 50 });
+  const toggleFollow = useToggleFollow(userId ?? '');
 
   if (!userId) {
     return <Navigate to="/" replace />;
@@ -181,13 +181,13 @@ export function ProfilePage() {
     );
   }
 
-  var isOwnProfile = isAuthenticated && me?.id === userId;
-  var followerCount = followersData?.totalCount ?? 0;
-  var followingCount = followingData?.totalCount ?? 0;
-  var poemCount = poemsData?.totalCount ?? 0;
-  var amFollowing = followersData?.items.some((u) => u.id === me?.id) ?? false;
+  const isOwnProfile = isAuthenticated && me?.id === userId;
+  const followerCount = followersData?.totalCount ?? 0;
+  const followingCount = followingData?.totalCount ?? 0;
+  const poemCount = poemsData?.totalCount ?? 0;
+  const amFollowing = followersData?.items.some((u) => u.id === me?.id) ?? false;
 
-  var tabs: { id: Tab; label: string; count: number }[] = [
+  const tabs: { id: Tab; label: string; count: number }[] = [
     { id: 'poems', label: 'Poems', count: poemCount },
     { id: 'followers', label: 'Followers', count: followerCount },
     { id: 'following', label: 'Following', count: followingCount },

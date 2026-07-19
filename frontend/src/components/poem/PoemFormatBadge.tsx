@@ -1,7 +1,7 @@
 import type { PoemFormat } from '@/types/poem';
 import { formatPoemFormat, cn } from '@/lib/utils';
 
-var formatColors: Record<PoemFormat, string> = {
+const formatColors: Record<PoemFormat, string> = {
   free_verse: 'bg-blue-100 text-blue-800',
   haiku: 'bg-emerald-100 text-emerald-800',
   sonnet: 'bg-purple-100 text-purple-800',

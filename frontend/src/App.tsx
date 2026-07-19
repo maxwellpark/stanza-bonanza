@@ -5,7 +5,7 @@ import { router } from '@/router';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuthStore } from '@/stores/authStore';
 
-var queryClient = new QueryClient({
+const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30 * 1000,
@@ -15,7 +15,7 @@ var queryClient = new QueryClient({
 });
 
 function AuthInit() {
-  var { fetchUser } = useAuthStore();
+  const { fetchUser } = useAuthStore();
 
   useEffect(() => {
     fetchUser();

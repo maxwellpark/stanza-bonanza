@@ -6,8 +6,8 @@ import { PoemDetail } from '@/components/poem/PoemDetail';
 import { Link } from 'react-router-dom';
 
 export function PoemPage() {
-  var { poemId } = useParams<{ poemId: string }>();
-  var { data: poem, isLoading, isError } = usePoem(poemId ?? '');
+  const { poemId } = useParams<{ poemId: string }>();
+  const { data: poem, isLoading, isError } = usePoem(poemId ?? '');
 
   usePageMeta(
     poem ? `${poem.title} — Stanza Bonanza` : 'Stanza Bonanza',

@@ -17,14 +17,14 @@ interface PoemDetailProps {
 }
 
 export function PoemDetail({ poem }: PoemDetailProps) {
-  var [extendOpen, setExtendOpen] = useState(false);
-  var [shared, setShared] = useState(false);
-  var { isAuthenticated, user } = useAuthStore();
-  var { openLogin } = useUIStore();
-  var publish = usePublishPoem(poem.id);
+  const [extendOpen, setExtendOpen] = useState(false);
+  const [shared, setShared] = useState(false);
+  const { isAuthenticated, user } = useAuthStore();
+  const { openLogin } = useUIStore();
+  const publish = usePublishPoem(poem.id);
 
   async function handleShare() {
-    var url = window.location.href;
+    const url = window.location.href;
     if (navigator.share) {
       try {
         await navigator.share({ title: poem.title, url });
@@ -38,11 +38,11 @@ export function PoemDetail({ poem }: PoemDetailProps) {
     setTimeout(() => setShared(false), 2000);
   }
 
-  var stanzas = poem.stanzas ?? [];
-  var pendingStanzas = stanzas.filter((s) => s.status === 'pending');
-  var approvedStanzas = stanzas.filter((s) => s.status !== 'pending');
-  var isAuthor = isAuthenticated && user?.id === poem.authorId;
-  var canExtend =
+  const stanzas = poem.stanzas ?? [];
+  const pendingStanzas = stanzas.filter((s) => s.status === 'pending');
+  const approvedStanzas = stanzas.filter((s) => s.status !== 'pending');
+  const isAuthor = isAuthenticated && user?.id === poem.authorId;
+  const canExtend =
     poem.approvalMode !== 'closed' &&
     (!poem.maxStanzas || stanzas.length < poem.maxStanzas);
 

@@ -11,7 +11,7 @@ interface ExtendPoemDialogProps {
   onClose: () => void;
 }
 
-var literaryDevices = [
+const literaryDevices = [
   'metaphor',
   'simile',
   'alliteration',
@@ -24,9 +24,9 @@ var literaryDevices = [
 ];
 
 export function ExtendPoemDialog({ poemId, format, isOpen, onClose }: ExtendPoemDialogProps) {
-  var [text, setText] = useState('');
-  var [device, setDevice] = useState('');
-  var mutation = useSubmitStanza(poemId);
+  const [text, setText] = useState('');
+  const [device, setDevice] = useState('');
+  const mutation = useSubmitStanza(poemId);
 
   function handleBackdropClick(e: React.MouseEvent) {
     if (e.target === e.currentTarget) {

@@ -7,7 +7,7 @@ import { NotificationsPanel } from './NotificationsPanel';
 import type { Notification } from '@/types/social';
 import type { PaginatedResponse } from '@/types/api';
 
-var mockMarkRead = vi.fn();
+const mockMarkRead = vi.fn();
 
 vi.mock('@/hooks/useSocial', () => ({
   useNotifications: vi.fn(),
@@ -58,7 +58,7 @@ function makeResponse(items: Notification[]): PaginatedResponse<Notification> {
 }
 
 function renderPanel() {
-  var client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <MemoryRouter>
       <QueryClientProvider client={client}>
@@ -85,7 +85,7 @@ describe('NotificationsPanel', () => {
   });
 
   it('shows no badge when there are no unread notifications', () => {
-    var read = makeNotification({ read: true });
+    const read = makeNotification({ read: true });
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([read]),
       isLoading: false,
@@ -98,8 +98,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('shows an unread badge with the correct count', () => {
-    var unread1 = makeNotification({ id: 'n-1', read: false });
-    var unread2 = makeNotification({ id: 'n-2', read: false });
+    const unread1 = makeNotification({ id: 'n-1', read: false });
+    const unread2 = makeNotification({ id: 'n-2', read: false });
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([unread1, unread2]),
       isLoading: false,
@@ -111,7 +111,7 @@ describe('NotificationsPanel', () => {
   });
 
   it('caps the badge at "9+" when there are more than 9 unread', () => {
-    var unread = Array.from({ length: 10 }, (_, i) =>
+    const unread = Array.from({ length: 10 }, (_, i) =>
       makeNotification({ id: `n-${i}`, read: false }),
     );
     vi.mocked(useNotifications).mockReturnValue({
@@ -125,8 +125,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('opens the dropdown panel when the bell is clicked', async () => {
-    var user = userEvent.setup();
-    var notif = makeNotification();
+    const user = userEvent.setup();
+    const notif = makeNotification();
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([notif]),
       isLoading: false,
@@ -140,8 +140,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('shows notification text in the dropdown', async () => {
-    var user = userEvent.setup();
-    var notif = makeNotification();
+    const user = userEvent.setup();
+    const notif = makeNotification();
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([notif]),
       isLoading: false,
@@ -156,7 +156,7 @@ describe('NotificationsPanel', () => {
   });
 
   it('shows "No notifications yet." when the list is empty', async () => {
-    var user = userEvent.setup();
+    const user = userEvent.setup();
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([]),
       isLoading: false,
@@ -170,8 +170,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('shows an unread indicator inside the dropdown for unread notifications', async () => {
-    var user = userEvent.setup();
-    var notif = makeNotification({ read: false });
+    const user = userEvent.setup();
+    const notif = makeNotification({ read: false });
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([notif]),
       isLoading: false,
@@ -186,8 +186,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('calls markRead with unread notification ids when the panel opens', async () => {
-    var user = userEvent.setup();
-    var notif = makeNotification({ id: 'notif-unread', read: false });
+    const user = userEvent.setup();
+    const notif = makeNotification({ id: 'notif-unread', read: false });
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([notif]),
       isLoading: false,
@@ -203,8 +203,8 @@ describe('NotificationsPanel', () => {
   });
 
   it('does not call markRead when all notifications are already read', async () => {
-    var user = userEvent.setup();
-    var notif = makeNotification({ read: true });
+    const user = userEvent.setup();
+    const notif = makeNotification({ read: true });
     vi.mocked(useNotifications).mockReturnValue({
       data: makeResponse([notif]),
       isLoading: false,

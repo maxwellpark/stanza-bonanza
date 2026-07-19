@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Stanza } from '@/types/poem';
 import { useToggleStanzaLike } from '@/hooks/useSocial';
@@ -10,7 +10,7 @@ interface StanzaBlockProps {
   isLast?: boolean;
 }
 
-var deviceColors: Record<string, string> = {
+const deviceColors: Record<string, string> = {
   metaphor: 'bg-purple-100 text-purple-700',
   simile: 'bg-blue-100 text-blue-700',
   alliteration: 'bg-emerald-100 text-emerald-700',
@@ -20,27 +20,27 @@ var deviceColors: Record<string, string> = {
 };
 
 export function StanzaBlock({ stanza, isLast }: StanzaBlockProps) {
-  var { isAuthenticated } = useAuthStore();
-  var { openLogin } = useUIStore();
-  var mutation = useToggleStanzaLike(stanza.poemId, stanza.id);
-  var [liked, setLiked] = useState(stanza.likedByMe ?? false);
-  var [count, setCount] = useState(stanza.likeCount);
+  const { isAuthenticated } = useAuthStore();
+  const { openLogin } = useUIStore();
+  const mutation = useToggleStanzaLike(stanza.poemId, stanza.id);
+  const [liked, setLiked] = useState(stanza.likedByMe ?? false);
+  const [count, setCount] = useState(stanza.likeCount);
 
-  // Resync to server state after a refetch (see the poem like button).
-  useEffect(() => {
-    if (mutation.isPending) {
-      return;
-    }
+  // Resync to server state after a refetch, adjusting state during render
+  // rather than in an effect (see the poem like button).
+  const [synced, setSynced] = useState({ liked: stanza.likedByMe ?? false, count: stanza.likeCount });
+  if (!mutation.isPending && (synced.liked !== (stanza.likedByMe ?? false) || synced.count !== stanza.likeCount)) {
+    setSynced({ liked: stanza.likedByMe ?? false, count: stanza.likeCount });
     setLiked(stanza.likedByMe ?? false);
     setCount(stanza.likeCount);
-  }, [stanza.likedByMe, stanza.likeCount, mutation.isPending]);
+  }
 
   function toggleLike() {
     if (!isAuthenticated) {
       openLogin();
       return;
     }
-    var next = !liked;
+    const next = !liked;
     setLiked(next);
     setCount((c) => c + (next ? 1 : -1));
     mutation.mutate(undefined, {

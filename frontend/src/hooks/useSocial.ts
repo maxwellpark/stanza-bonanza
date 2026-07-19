@@ -5,7 +5,7 @@ import type { User } from '@/types/user';
 import type { PaginatedResponse, PaginationParams } from '@/types/api';
 
 export function useToggleLike(poemId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<{ liked: boolean }>(`/poems/${poemId}/like`),
     onSuccess: () => {
@@ -16,7 +16,7 @@ export function useToggleLike(poemId: string) {
 }
 
 export function useToggleStanzaLike(poemId: string, stanzaId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<{ liked: boolean }>(`/poems/${poemId}/stanzas/${stanzaId}/like`),
     onSuccess: () => {
@@ -34,7 +34,7 @@ export function useComments(poemId: string, params?: PaginationParams) {
 }
 
 export function useAddComment(poemId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { text: string; parentId?: string }) =>
       api.post<Comment>(`/poems/${poemId}/comments`, input),
@@ -46,7 +46,7 @@ export function useAddComment(poemId: string) {
 }
 
 export function useToggleFollow(userId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.post<{ following: boolean }>(`/users/${userId}/follow`),
     onSuccess: () => {
@@ -80,7 +80,7 @@ export function useUserProfile(userId: string) {
 }
 
 export function useUpdateProfile() {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: { displayName: string; bio: string; avatarUrl: string }) =>
       api.put('/users/me', input),
@@ -99,7 +99,7 @@ export function useNotifications(params?: PaginationParams) {
 }
 
 export function useMarkNotificationsRead() {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (ids: string[]) => api.post('/notifications/read', { ids }),
     onSuccess: () => {

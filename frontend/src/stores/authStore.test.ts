@@ -12,7 +12,7 @@ vi.mock('@/lib/api', () => ({
 
 import { api } from '@/lib/api';
 
-var mockUser: User = {
+const mockUser: User = {
   id: 'user-1',
   displayName: 'Ada Lovelace',
   email: 'ada@example.com',
@@ -35,7 +35,7 @@ describe('fetchUser', () => {
 
     await useAuthStore.getState().fetchUser();
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toEqual(mockUser);
     expect(state.isAuthenticated).toBe(true);
     expect(state.isLoading).toBe(false);
@@ -46,7 +46,7 @@ describe('fetchUser', () => {
 
     await useAuthStore.getState().fetchUser();
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
     expect(state.isLoading).toBe(false);
@@ -68,7 +68,7 @@ describe('logout', () => {
 
     await useAuthStore.getState().logout();
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
@@ -88,7 +88,7 @@ describe('logout', () => {
     // The promise rejects but the finally block still clears state.
     await useAuthStore.getState().logout().catch(() => undefined);
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
@@ -98,7 +98,7 @@ describe('setUser', () => {
   it('sets user and marks isAuthenticated true when given a user', () => {
     useAuthStore.getState().setUser(mockUser);
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toEqual(mockUser);
     expect(state.isAuthenticated).toBe(true);
   });
@@ -107,7 +107,7 @@ describe('setUser', () => {
     useAuthStore.setState({ user: mockUser, isAuthenticated: true, isLoading: false });
     useAuthStore.getState().setUser(null);
 
-    var state = useAuthStore.getState();
+    const state = useAuthStore.getState();
     expect(state.user).toBeNull();
     expect(state.isAuthenticated).toBe(false);
   });
