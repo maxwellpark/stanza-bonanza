@@ -1,78 +1,57 @@
-# Stanza Bonanza 
+# Stanza Bonanza
 
-Unlike other poetry sites, Stanza Bonanza encourages open collaboration between poets. Users can create a new poem, write a stanza or two, and then wait for other users to extend that poem, adding their own personal spin and enriching the piece in the process. Before long, a diverse tapestry comes to life! 
+Unlike other poetry sites, Stanza Bonanza encourages open collaboration between poets. Users can create a new poem, write a stanza or two, and then wait for other users to extend that poem, adding their own personal spin and enriching the piece in the process. Before long, a diverse tapestry comes to life!
 
-Poems on Stanza Bonanza are more than the sum of their parts! 
+Poems on Stanza Bonanza are more than the sum of their parts!
 
 If poets desire more control over their work, they can specify certain constraints.
 
-___
+---
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## Stack
 
-## Available Scripts
+- **Backend**: Go 1.25, chi router, Postgres (raw SQL migrations), WebAuthn passkeys
+  and magic-link auth. In `backend/`.
+- **Frontend**: React + Vite + TypeScript, React Query, Zustand, Tailwind,
+  react-markdown. In `frontend/` (pnpm).
 
-In the project directory, you can run:
+## Develop
 
-### `yarn start`
+```bash
+make dev        # Postgres (docker-compose) + backend + frontend
+make migrate    # apply DB migrations (needs DATABASE_URL)
+make test       # backend + frontend tests
+make lint
+```
 
-Runs the app in the development mode.<br />
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Or per side: `make dev-backend`, `make dev-frontend`. Frontend on `:5173`, backend on `:8080`.
 
-The page will reload if you make edits.<br />
-You will also see any lint errors in the console.
+## Environment
 
-### `yarn test`
+Backend config lives in `backend/internal/config/config.go`, set via env or a `.env`:
 
-Launches the test runner in the interactive watch mode.<br />
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Var | Required | Default |
+|---|---|---|
+| `DATABASE_URL` | yes | — |
+| `SESSION_SECRET` | yes | — |
+| `PORT` | no | `8080` |
+| `ALLOWED_ORIGINS` | no | `http://localhost:5173` |
+| `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_RP_ORIGINS` | no | localhost defaults |
+| `RESEND_API_KEY` | for magic-link email | — |
+| `MAGIC_LINK_BASE_URL` | no | `http://localhost:5173/auth/verify` |
 
-### `yarn build`
+## Deploy
 
-Builds the app for production to the `build` folder.<br />
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The backend deploys to Fly.io from `backend/fly.toml` (`fly deploy`); the frontend
+builds to static assets (`pnpm build`).
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
+## Layout
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `yarn eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `yarn build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+```
+backend/
+  cmd/server      entrypoint
+  internal/       handler, service, repository, middleware, domain, config
+  migrations/     SQL migrations
+frontend/
+  src/            components, pages, hooks, store
+```
