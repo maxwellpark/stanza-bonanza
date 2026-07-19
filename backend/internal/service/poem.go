@@ -12,7 +12,7 @@ import (
 type poemStore interface {
 	Create(ctx context.Context, poem *domain.Poem) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Poem, error)
-	List(ctx context.Context, page domain.PaginationParams, format string, sort string) ([]domain.Poem, int, error)
+	List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error)
 	ListByUser(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
 	ListFeed(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
 	ListExplore(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error)
@@ -37,23 +37,49 @@ type likeChecker interface {
 	Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
 }
 
+type tagStore interface {
+	SetForPoem(ctx context.Context, poemID uuid.UUID, names []string) error
+	ListForPoem(ctx context.Context, poemID uuid.UUID) ([]string, error)
+	ListForPoems(ctx context.Context, poemIDs []uuid.UUID) (map[uuid.UUID][]string, error)
+}
+
 type PoemService struct {
 	poems   poemStore
 	stanzas stanzaStore
 	notifs  poemNotifStore
 	likes   likeChecker
+	tags    tagStore
 }
 
-func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository, likes *repository.LikeRepository) *PoemService {
+func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository, likes *repository.LikeRepository, tags *repository.TagRepository) *PoemService {
 	return &PoemService{
 		poems:   poems,
 		stanzas: stanzas,
 		notifs:  notifs,
 		likes:   likes,
+		tags:    tags,
 	}
 }
 
-func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int) (*domain.Poem, error) {
+// attachTags fills Tags on a batch of poems with one query.
+func (s *PoemService) attachTags(ctx context.Context, poems []domain.Poem) {
+	if s.tags == nil || len(poems) == 0 {
+		return
+	}
+	ids := make([]uuid.UUID, len(poems))
+	for i := range poems {
+		ids[i] = poems[i].ID
+	}
+	byID, err := s.tags.ListForPoems(ctx, ids)
+	if err != nil {
+		return
+	}
+	for i := range poems {
+		poems[i].Tags = byID[poems[i].ID]
+	}
+}
+
+func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string) (*domain.Poem, error) {
 	var poem = &domain.Poem{
 		AuthorID:     userID,
 		Title:        title,
@@ -65,6 +91,13 @@ func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, descr
 
 	if err := s.poems.Create(ctx, poem); err != nil {
 		return nil, fmt.Errorf("creating poem: %w", err)
+	}
+
+	if len(tags) > 0 && s.tags != nil {
+		if err := s.tags.SetForPoem(ctx, poem.ID, tags); err != nil {
+			return nil, fmt.Errorf("setting tags: %w", err)
+		}
+		poem.Tags, _ = s.tags.ListForPoem(ctx, poem.ID)
 	}
 
 	return poem, nil
@@ -88,30 +121,54 @@ func (s *PoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.
 		}
 	}
 
+	if s.tags != nil {
+		poem.Tags, _ = s.tags.ListForPoem(ctx, id)
+	}
+
 	return poem, nil
 }
 
-func (s *PoemService) List(ctx context.Context, page domain.PaginationParams, format, sort string) ([]domain.Poem, int, error) {
-	return s.poems.List(ctx, page, format, sort)
+func (s *PoemService) List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error) {
+	poems, total, err := s.poems.List(ctx, page, format, sort, q, tag)
+	if err != nil {
+		return nil, 0, err
+	}
+	s.attachTags(ctx, poems)
+	return poems, total, nil
 }
 
 func (s *PoemService) ListByUser(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
-	return s.poems.ListByUser(ctx, userID, page)
+	poems, total, err := s.poems.ListByUser(ctx, userID, page)
+	if err != nil {
+		return nil, 0, err
+	}
+	s.attachTags(ctx, poems)
+	return poems, total, nil
 }
 
 func (s *PoemService) Feed(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
-	return s.poems.ListFeed(ctx, userID, page)
+	poems, total, err := s.poems.ListFeed(ctx, userID, page)
+	if err != nil {
+		return nil, 0, err
+	}
+	s.attachTags(ctx, poems)
+	return poems, total, nil
 }
 
 func (s *PoemService) Explore(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error) {
-	return s.poems.ListExplore(ctx, page)
+	poems, total, err := s.poems.ListExplore(ctx, page)
+	if err != nil {
+		return nil, 0, err
+	}
+	s.attachTags(ctx, poems)
+	return poems, total, nil
 }
 
 func (s *PoemService) HallOfFame(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error) {
 	return s.poems.ListHallOfFame(ctx, page)
 }
 
-func (s *PoemService) Update(ctx context.Context, userID, poemID uuid.UUID, title, description string) error {
+func (s *PoemService) Update(ctx context.Context, userID, poemID uuid.UUID, title, description string, tags []string) error {
 	poem, err := s.poems.GetByID(ctx, poemID)
 	if err != nil {
 		return fmt.Errorf("poem not found: %w", err)
@@ -122,7 +179,16 @@ func (s *PoemService) Update(ctx context.Context, userID, poemID uuid.UUID, titl
 
 	poem.Title = title
 	poem.Description = description
-	return s.poems.Update(ctx, poem)
+	if err := s.poems.Update(ctx, poem); err != nil {
+		return err
+	}
+
+	if tags != nil && s.tags != nil {
+		if err := s.tags.SetForPoem(ctx, poemID, tags); err != nil {
+			return fmt.Errorf("setting tags: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *PoemService) Delete(ctx context.Context, userID, poemID uuid.UUID) error {

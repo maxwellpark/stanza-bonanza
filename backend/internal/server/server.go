@@ -69,11 +69,12 @@ func (s *Server) setupRoutes() {
 	commentRepo := repository.NewCommentRepository(s.db)
 	followRepo := repository.NewFollowRepository(s.db)
 	notifRepo := repository.NewNotificationRepository(s.db)
+	tagRepo := repository.NewTagRepository(s.db)
 
 	tutorialRepo := repository.NewTutorialRepository(s.db)
 
 	authSvc := service.NewAuthService(userRepo, sessionRepo, magicLinkRepo, webAuthnRepo, s.cfg)
-	poemSvc := service.NewPoemService(poemRepo, stanzaRepo, notifRepo, likeRepo)
+	poemSvc := service.NewPoemService(poemRepo, stanzaRepo, notifRepo, likeRepo, tagRepo)
 	socialSvc := service.NewSocialService(likeRepo, commentRepo, followRepo, notifRepo, poemRepo)
 	tutorialSvc := service.NewTutorialService(tutorialRepo)
 

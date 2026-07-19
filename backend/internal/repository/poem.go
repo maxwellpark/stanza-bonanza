@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -88,17 +89,32 @@ func (r *PoemRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Poe
 	return scanPoem(r.pool.QueryRow(ctx, query, id))
 }
 
-func (r *PoemRepository) List(ctx context.Context, page domain.PaginationParams, format string, sort string) ([]domain.Poem, int, error) {
+func (r *PoemRepository) List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error) {
 	page.Normalize()
 
-	var where string
+	var conds []string
 	var args []any
 	var argIdx = 1
 
 	if format != "" {
-		where = fmt.Sprintf(" WHERE p.format = $%d", argIdx)
+		conds = append(conds, fmt.Sprintf("p.format = $%d", argIdx))
 		args = append(args, format)
 		argIdx++
+	}
+	if q != "" {
+		conds = append(conds, fmt.Sprintf("(p.title ILIKE $%d OR p.description ILIKE $%d OR u.display_name ILIKE $%d)", argIdx, argIdx, argIdx))
+		args = append(args, "%"+q+"%")
+		argIdx++
+	}
+	if tag != "" {
+		conds = append(conds, fmt.Sprintf("p.id IN (SELECT pt.poem_id FROM poem_tags pt JOIN tags t ON t.id = pt.tag_id WHERE t.slug = $%d)", argIdx))
+		args = append(args, tag)
+		argIdx++
+	}
+
+	var where string
+	if len(conds) > 0 {
+		where = " WHERE " + strings.Join(conds, " AND ")
 	}
 
 	var orderBy string

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -13,11 +14,11 @@ import (
 )
 
 type poemService interface {
-	Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int) (*domain.Poem, error)
+	Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string) (*domain.Poem, error)
 	Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.Poem, error)
-	List(ctx context.Context, page domain.PaginationParams, format, sort string) ([]domain.Poem, int, error)
+	List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error)
 	ListByUser(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
-	Update(ctx context.Context, userID, poemID uuid.UUID, title, description string) error
+	Update(ctx context.Context, userID, poemID uuid.UUID, title, description string, tags []string) error
 	Delete(ctx context.Context, userID, poemID uuid.UUID) error
 	ListStanzas(ctx context.Context, poemID uuid.UUID) ([]domain.Stanza, error)
 	SubmitStanza(ctx context.Context, userID, poemID uuid.UUID, text, literaryDevice string) (*domain.Stanza, error)
@@ -48,6 +49,7 @@ func (h *PoemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Format       domain.PoemFormat  `json:"format"`
 		ApprovalMode domain.ApprovalMode `json:"approvalMode"`
 		MaxStanzas   *int               `json:"maxStanzas"`
+		Tags         []string           `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
@@ -62,6 +64,10 @@ func (h *PoemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "title must be 200 characters or fewer")
 		return
 	}
+	if len(body.Tags) > 10 {
+		respondError(w, http.StatusBadRequest, "a poem can have at most 10 tags")
+		return
+	}
 	if body.Format == "" {
 		respondError(w, http.StatusBadRequest, "format is required")
 		return
@@ -70,7 +76,7 @@ func (h *PoemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		body.ApprovalMode = domain.ApprovalOpen
 	}
 
-	poem, err := h.svc.Create(r.Context(), userID, body.Title, body.Description, body.Format, body.ApprovalMode, body.MaxStanzas)
+	poem, err := h.svc.Create(r.Context(), userID, body.Title, body.Description, body.Format, body.ApprovalMode, body.MaxStanzas, body.Tags)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to create poem")
 		return
@@ -100,8 +106,10 @@ func (h *PoemHandler) List(w http.ResponseWriter, r *http.Request) {
 	var page = parsePagination(r)
 	var format = r.URL.Query().Get("format")
 	var sort = r.URL.Query().Get("sort")
+	var q = strings.TrimSpace(r.URL.Query().Get("q"))
+	var tag = r.URL.Query().Get("tag")
 
-	poems, total, err := h.svc.List(r.Context(), page, format, sort)
+	poems, total, err := h.svc.List(r.Context(), page, format, sort, q, tag)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to list poems")
 		return
@@ -151,8 +159,9 @@ func (h *PoemHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Tags        []string `json:"tags"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
@@ -167,8 +176,12 @@ func (h *PoemHandler) Update(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, "title must be 200 characters or fewer")
 		return
 	}
+	if len(body.Tags) > 10 {
+		respondError(w, http.StatusBadRequest, "a poem can have at most 10 tags")
+		return
+	}
 
-	if err := h.svc.Update(r.Context(), userID, poemID, body.Title, body.Description); err != nil {
+	if err := h.svc.Update(r.Context(), userID, poemID, body.Title, body.Description, body.Tags); err != nil {
 		if err.Error() == "not the poem author" {
 			respondError(w, http.StatusForbidden, "you are not the author of this poem")
 			return

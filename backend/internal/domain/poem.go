@@ -41,6 +41,7 @@ type Poem struct {
 	StanzaCount     int          `json:"stanzaCount"`
 	CommentCount    int          `json:"commentCount"`
 	LikedByMe       bool         `json:"likedByMe"` // set on the detail view for the current user
+	Tags            []string     `json:"tags"`
 	Stanzas         []Stanza     `json:"stanzas,omitempty"`
 	CreatedAt       time.Time    `json:"createdAt"`
 	UpdatedAt       time.Time    `json:"updatedAt"`
