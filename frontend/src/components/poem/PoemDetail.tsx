@@ -85,7 +85,7 @@ export function PoemDetail({ poem }: PoemDetailProps) {
       </div>
 
       <div className="mb-8 flex items-center gap-4">
-        <LikeButton poemId={poem.id} likeCount={poem.likeCount} />
+        <LikeButton poemId={poem.id} likeCount={poem.likeCount} isLiked={poem.likedByMe} />
 
         <span className="flex items-center gap-1 font-sans text-sm text-feather">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

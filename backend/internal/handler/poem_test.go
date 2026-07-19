@@ -25,8 +25,8 @@ func (m *mockPoemService) Create(ctx context.Context, userID uuid.UUID, title, d
 	p, _ := args.Get(0).(*domain.Poem)
 	return p, args.Error(1)
 }
-func (m *mockPoemService) Get(ctx context.Context, id uuid.UUID) (*domain.Poem, error) {
-	args := m.Called(ctx, id)
+func (m *mockPoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.Poem, error) {
+	args := m.Called(ctx, id, viewerID)
 	p, _ := args.Get(0).(*domain.Poem)
 	return p, args.Error(1)
 }
@@ -152,7 +152,7 @@ func TestPoemHandler_Get_ValidID(t *testing.T) {
 
 	poemID := uuid.New()
 	poem := &domain.Poem{ID: poemID, Title: "Found"}
-	svc.On("Get", mock.Anything, poemID).Return(poem, nil)
+	svc.On("Get", mock.Anything, poemID, uuid.Nil).Return(poem, nil)
 
 	r := httptest.NewRequest(http.MethodGet, "/poems/"+poemID.String(), nil)
 	rctx := chi.NewRouteContext()

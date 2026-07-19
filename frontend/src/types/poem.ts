@@ -27,6 +27,7 @@ export interface Poem {
   likeCount: number;
   stanzaCount: number;
   commentCount: number;
+  likedByMe?: boolean;
   stanzas?: Stanza[];
   createdAt: string;
   updatedAt: string;

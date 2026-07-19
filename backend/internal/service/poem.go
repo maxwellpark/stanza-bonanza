@@ -33,17 +33,23 @@ type poemNotifStore interface {
 	Create(ctx context.Context, notif *domain.Notification) error
 }
 
+type likeChecker interface {
+	Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error)
+}
+
 type PoemService struct {
 	poems   poemStore
 	stanzas stanzaStore
 	notifs  poemNotifStore
+	likes   likeChecker
 }
 
-func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository) *PoemService {
+func NewPoemService(poems *repository.PoemRepository, stanzas *repository.StanzaRepository, notifs *repository.NotificationRepository, likes *repository.LikeRepository) *PoemService {
 	return &PoemService{
 		poems:   poems,
 		stanzas: stanzas,
 		notifs:  notifs,
+		likes:   likes,
 	}
 }
 
@@ -64,7 +70,7 @@ func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, descr
 	return poem, nil
 }
 
-func (s *PoemService) Get(ctx context.Context, id uuid.UUID) (*domain.Poem, error) {
+func (s *PoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.Poem, error) {
 	poem, err := s.poems.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("poem not found: %w", err)
@@ -75,6 +81,12 @@ func (s *PoemService) Get(ctx context.Context, id uuid.UUID) (*domain.Poem, erro
 		return nil, fmt.Errorf("loading stanzas: %w", err)
 	}
 	poem.Stanzas = stanzas
+
+	if viewerID != uuid.Nil && s.likes != nil {
+		if liked, err := s.likes.Exists(ctx, viewerID, id); err == nil {
+			poem.LikedByMe = liked
+		}
+	}
 
 	return poem, nil
 }
