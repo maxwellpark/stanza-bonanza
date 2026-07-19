@@ -4,35 +4,65 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 
 	"golang.org/x/time/rate"
 )
 
+// visitorTTL is how long an idle visitor's limiter is kept before eviction.
+const visitorTTL = 10 * time.Minute
+
+type visitor struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 type RateLimiter struct {
-	visitors map[string]*rate.Limiter
+	visitors map[string]*visitor
 	mu       sync.Mutex
 	rate     rate.Limit
 	burst    int
 }
 
 func NewRateLimiter(r rate.Limit, burst int) *RateLimiter {
-	return &RateLimiter{
-		visitors: make(map[string]*rate.Limiter),
+	rl := &RateLimiter{
+		visitors: make(map[string]*visitor),
 		rate:     r,
 		burst:    burst,
 	}
+	go rl.sweep()
+	return rl
 }
 
 func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	limiter, exists := rl.visitors[ip]
+	v, exists := rl.visitors[ip]
 	if !exists {
-		limiter = rate.NewLimiter(rl.rate, rl.burst)
-		rl.visitors[ip] = limiter
+		v = &visitor{limiter: rate.NewLimiter(rl.rate, rl.burst)}
+		rl.visitors[ip] = v
 	}
-	return limiter
+	v.lastSeen = time.Now()
+	return v.limiter
+}
+
+// sweep evicts idle visitors so the map can't grow without bound.
+func (rl *RateLimiter) sweep() {
+	ticker := time.NewTicker(visitorTTL)
+	for range ticker.C {
+		rl.cleanup(time.Now())
+	}
+}
+
+func (rl *RateLimiter) cleanup(now time.Time) {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	for ip, v := range rl.visitors {
+		if now.Sub(v.lastSeen) > visitorTTL {
+			delete(rl.visitors, ip)
+		}
+	}
 }
 
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
