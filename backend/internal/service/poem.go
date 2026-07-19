@@ -17,6 +17,8 @@ type poemStore interface {
 	ListFeed(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
 	ListExplore(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error)
 	ListHallOfFame(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error)
+	ListDrafts(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
+	Publish(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, poem *domain.Poem) error
 	Delete(ctx context.Context, id uuid.UUID) error
 	IncrementCounter(ctx context.Context, id uuid.UUID, column string, delta int) error
@@ -85,7 +87,7 @@ func (s *PoemService) attachTags(ctx context.Context, poems []domain.Poem) {
 	}
 }
 
-func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string) (*domain.Poem, error) {
+func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string, published bool) (*domain.Poem, error) {
 	var poem = &domain.Poem{
 		AuthorID:     userID,
 		Title:        title,
@@ -93,6 +95,7 @@ func (s *PoemService) Create(ctx context.Context, userID uuid.UUID, title, descr
 		Format:       format,
 		ApprovalMode: approvalMode,
 		MaxStanzas:   maxStanzas,
+		Published:    published,
 	}
 
 	if err := s.poems.Create(ctx, poem); err != nil {
@@ -113,6 +116,11 @@ func (s *PoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.
 	poem, err := s.poems.GetByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("poem not found: %w", err)
+	}
+
+	// Drafts are only visible to their author.
+	if !poem.Published && poem.AuthorID != viewerID {
+		return nil, fmt.Errorf("poem not found")
 	}
 
 	stanzas, err := s.stanzas.ListByPoem(ctx, id)
@@ -184,6 +192,26 @@ func (s *PoemService) Explore(ctx context.Context, page domain.PaginationParams)
 
 func (s *PoemService) HallOfFame(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error) {
 	return s.poems.ListHallOfFame(ctx, page)
+}
+
+func (s *PoemService) Drafts(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
+	poems, total, err := s.poems.ListDrafts(ctx, userID, page)
+	if err != nil {
+		return nil, 0, err
+	}
+	s.attachTags(ctx, poems)
+	return poems, total, nil
+}
+
+func (s *PoemService) Publish(ctx context.Context, userID, poemID uuid.UUID) error {
+	poem, err := s.poems.GetByID(ctx, poemID)
+	if err != nil {
+		return fmt.Errorf("poem not found: %w", err)
+	}
+	if poem.AuthorID != userID {
+		return fmt.Errorf("not the poem author")
+	}
+	return s.poems.Publish(ctx, poemID)
 }
 
 func (s *PoemService) Update(ctx context.Context, userID, poemID uuid.UUID, title, description string, tags []string) error {

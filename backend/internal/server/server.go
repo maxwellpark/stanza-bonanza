@@ -109,10 +109,12 @@ func (s *Server) setupRoutes() {
 		r.Route("/poems", func(r chi.Router) {
 			r.With(optionalAuth).Get("/", poemHandler.List)
 			r.With(authMiddleware).Post("/", poemHandler.Create)
+			r.With(authMiddleware).Get("/drafts", poemHandler.Drafts)
 			r.Route("/{poemID}", func(r chi.Router) {
 				r.With(optionalAuth).Get("/", poemHandler.Get)
 				r.With(authMiddleware).Put("/", poemHandler.Update)
 				r.With(authMiddleware).Delete("/", poemHandler.Delete)
+				r.With(authMiddleware).Post("/publish", poemHandler.Publish)
 
 				// Stanzas
 				r.Get("/stanzas", poemHandler.ListStanzas)

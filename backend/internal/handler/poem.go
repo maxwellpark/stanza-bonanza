@@ -14,8 +14,10 @@ import (
 )
 
 type poemService interface {
-	Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string) (*domain.Poem, error)
+	Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string, published bool) (*domain.Poem, error)
 	Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.Poem, error)
+	Drafts(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
+	Publish(ctx context.Context, userID, poemID uuid.UUID) error
 	List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error)
 	ListByUser(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
 	Update(ctx context.Context, userID, poemID uuid.UUID, title, description string, tags []string) error
@@ -50,6 +52,7 @@ func (h *PoemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		ApprovalMode domain.ApprovalMode `json:"approvalMode"`
 		MaxStanzas   *int               `json:"maxStanzas"`
 		Tags         []string           `json:"tags"`
+		Draft        bool               `json:"draft"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
@@ -76,7 +79,7 @@ func (h *PoemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		body.ApprovalMode = domain.ApprovalOpen
 	}
 
-	poem, err := h.svc.Create(r.Context(), userID, body.Title, body.Description, body.Format, body.ApprovalMode, body.MaxStanzas, body.Tags)
+	poem, err := h.svc.Create(r.Context(), userID, body.Title, body.Description, body.Format, body.ApprovalMode, body.MaxStanzas, body.Tags, !body.Draft)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "failed to create poem")
 		return
@@ -100,6 +103,53 @@ func (h *PoemHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	respondJSON(w, http.StatusOK, poem)
+}
+
+func (h *PoemHandler) Drafts(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	var page = parsePagination(r)
+	poems, total, err := h.svc.Drafts(r.Context(), userID, page)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to list drafts")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, domain.PaginatedResult[domain.Poem]{
+		Items:      poems,
+		TotalCount: total,
+		Page:       page.Page,
+		PageSize:   page.PageSize,
+	})
+}
+
+func (h *PoemHandler) Publish(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		respondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	poemID, err := uuid.Parse(chi.URLParam(r, "poemID"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid poem ID")
+		return
+	}
+
+	if err := h.svc.Publish(r.Context(), userID, poemID); err != nil {
+		if err.Error() == "not the poem author" {
+			respondError(w, http.StatusForbidden, "you are not the author of this poem")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "failed to publish poem")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{"message": "poem published"})
 }
 
 func (h *PoemHandler) List(w http.ResponseWriter, r *http.Request) {

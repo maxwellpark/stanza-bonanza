@@ -29,10 +29,10 @@ func (r *PoemRepository) Create(ctx context.Context, poem *domain.Poem) error {
 	poem.UpdatedAt = now
 
 	_, err := r.pool.Exec(ctx,
-		`INSERT INTO poems (id, author_id, title, description, format, format_rules_json, approval_mode, max_stanzas, is_hall_of_fame, like_count, stanza_count, comment_count, created_at, updated_at)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+		`INSERT INTO poems (id, author_id, title, description, format, format_rules_json, approval_mode, max_stanzas, is_hall_of_fame, published, like_count, stanza_count, comment_count, created_at, updated_at)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
 		poem.ID, poem.AuthorID, poem.Title, poem.Description, poem.Format, poem.FormatRulesJSON,
-		poem.ApprovalMode, poem.MaxStanzas, poem.IsHallOfFame, poem.LikeCount, poem.StanzaCount,
+		poem.ApprovalMode, poem.MaxStanzas, poem.IsHallOfFame, poem.Published, poem.LikeCount, poem.StanzaCount,
 		poem.CommentCount, poem.CreatedAt, poem.UpdatedAt,
 	)
 	return err
@@ -40,7 +40,7 @@ func (r *PoemRepository) Create(ctx context.Context, poem *domain.Poem) error {
 
 const poemSelectFields = `
 	p.id, p.author_id, p.title, p.description, p.format, p.format_rules_json,
-	p.approval_mode, p.max_stanzas, p.is_hall_of_fame, p.like_count, p.stanza_count,
+	p.approval_mode, p.max_stanzas, p.is_hall_of_fame, p.published, p.like_count, p.stanza_count,
 	p.comment_count, p.created_at, p.updated_at,
 	u.id, u.display_name, u.email, u.bio, u.avatar_url, u.is_verified, u.created_at, u.updated_at`
 
@@ -51,7 +51,7 @@ func scanPoem(row pgx.Row) (*domain.Poem, error) {
 	var author domain.User
 	err := row.Scan(
 		&p.ID, &p.AuthorID, &p.Title, &p.Description, &p.Format, &p.FormatRulesJSON,
-		&p.ApprovalMode, &p.MaxStanzas, &p.IsHallOfFame, &p.LikeCount, &p.StanzaCount,
+		&p.ApprovalMode, &p.MaxStanzas, &p.IsHallOfFame, &p.Published, &p.LikeCount, &p.StanzaCount,
 		&p.CommentCount, &p.CreatedAt, &p.UpdatedAt,
 		&author.ID, &author.DisplayName, &author.Email, &author.Bio, &author.AvatarURL,
 		&author.IsVerified, &author.CreatedAt, &author.UpdatedAt,
@@ -92,7 +92,7 @@ func (r *PoemRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.Poe
 func (r *PoemRepository) List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error) {
 	page.Normalize()
 
-	var conds []string
+	var conds = []string{"p.published = true"}
 	var args []any
 	var argIdx = 1
 
@@ -154,14 +154,14 @@ func (r *PoemRepository) ListByUser(ctx context.Context, userID uuid.UUID, page 
 
 	var totalCount int
 	err := r.pool.QueryRow(ctx,
-		`SELECT COUNT(*)`+poemFromJoin+` WHERE p.author_id = $1`, userID,
+		`SELECT COUNT(*)`+poemFromJoin+` WHERE p.author_id = $1 AND p.published = true`, userID,
 	).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	rows, err := r.pool.Query(ctx,
-		`SELECT`+poemSelectFields+poemFromJoin+` WHERE p.author_id = $1 ORDER BY p.created_at DESC LIMIT $2 OFFSET $3`,
+		`SELECT`+poemSelectFields+poemFromJoin+` WHERE p.author_id = $1 AND p.published = true ORDER BY p.created_at DESC LIMIT $2 OFFSET $3`,
 		userID, page.PageSize, page.Offset(),
 	)
 	if err != nil {
@@ -179,7 +179,7 @@ func (r *PoemRepository) ListByUser(ctx context.Context, userID uuid.UUID, page 
 func (r *PoemRepository) ListFeed(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
 	page.Normalize()
 
-	var feedWhere = poemFromJoin + ` WHERE p.author_id IN (SELECT followed_id FROM follows WHERE follower_id = $1)`
+	var feedWhere = poemFromJoin + ` WHERE p.published = true AND p.author_id IN (SELECT followed_id FROM follows WHERE follower_id = $1)`
 
 	var totalCount int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*)`+feedWhere, userID).Scan(&totalCount)
@@ -206,7 +206,7 @@ func (r *PoemRepository) ListFeed(ctx context.Context, userID uuid.UUID, page do
 func (r *PoemRepository) ListExplore(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error) {
 	page.Normalize()
 
-	var exploreWhere = poemFromJoin + ` WHERE p.created_at > now() - interval '7 days'`
+	var exploreWhere = poemFromJoin + ` WHERE p.published = true AND p.created_at > now() - interval '7 days'`
 
 	var totalCount int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*)`+exploreWhere).Scan(&totalCount)
@@ -233,7 +233,7 @@ func (r *PoemRepository) ListExplore(ctx context.Context, page domain.Pagination
 func (r *PoemRepository) ListHallOfFame(ctx context.Context, page domain.PaginationParams) ([]domain.Poem, int, error) {
 	page.Normalize()
 
-	var hofWhere = poemFromJoin + ` WHERE p.is_hall_of_fame = true`
+	var hofWhere = poemFromJoin + ` WHERE p.is_hall_of_fame = true AND p.published = true`
 
 	var totalCount int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*)`+hofWhere).Scan(&totalCount)
@@ -255,6 +255,37 @@ func (r *PoemRepository) ListHallOfFame(ctx context.Context, page domain.Paginat
 		return nil, 0, err
 	}
 	return poems, totalCount, nil
+}
+
+func (r *PoemRepository) ListDrafts(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error) {
+	page.Normalize()
+
+	var draftWhere = poemFromJoin + ` WHERE p.author_id = $1 AND p.published = false`
+
+	var totalCount int
+	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*)`+draftWhere, userID).Scan(&totalCount); err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := r.pool.Query(ctx,
+		`SELECT`+poemSelectFields+draftWhere+` ORDER BY p.updated_at DESC LIMIT $2 OFFSET $3`,
+		userID, page.PageSize, page.Offset(),
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	poems, err := scanPoems(rows)
+	if err != nil {
+		return nil, 0, err
+	}
+	return poems, totalCount, nil
+}
+
+func (r *PoemRepository) Publish(ctx context.Context, id uuid.UUID) error {
+	_, err := r.pool.Exec(ctx, `UPDATE poems SET published = true, updated_at = now() WHERE id = $1`, id)
+	return err
 }
 
 func (r *PoemRepository) Update(ctx context.Context, poem *domain.Poem) error {
