@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"sync"
 
@@ -36,16 +37,23 @@ func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
 
 func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip := r.RemoteAddr
-		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
-			ip = forwarded
-		}
-
-		limiter := rl.getLimiter(ip)
+		limiter := rl.getLimiter(clientIP(r))
 		if !limiter.Allow() {
 			http.Error(w, `{"error":"rate limit exceeded"}`, http.StatusTooManyRequests)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+// clientIP keys the limiter on Fly's trusted client IP. Fly's edge overrides
+// Fly-Client-IP, so a client can't spoof it; raw X-Forwarded-For it can.
+func clientIP(r *http.Request) string {
+	if fly := r.Header.Get("Fly-Client-IP"); fly != "" {
+		return fly
+	}
+	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
