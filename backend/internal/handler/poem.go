@@ -14,7 +14,7 @@ import (
 
 type poemService interface {
 	Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int) (*domain.Poem, error)
-	Get(ctx context.Context, id uuid.UUID) (*domain.Poem, error)
+	Get(ctx context.Context, id, viewerID uuid.UUID) (*domain.Poem, error)
 	List(ctx context.Context, page domain.PaginationParams, format, sort string) ([]domain.Poem, int, error)
 	ListByUser(ctx context.Context, userID uuid.UUID, page domain.PaginationParams) ([]domain.Poem, int, error)
 	Update(ctx context.Context, userID, poemID uuid.UUID, title, description string) error
@@ -86,7 +86,8 @@ func (h *PoemHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	poem, err := h.svc.Get(r.Context(), poemID)
+	viewerID, _ := middleware.UserIDFromContext(r.Context())
+	poem, err := h.svc.Get(r.Context(), poemID, viewerID)
 	if err != nil {
 		respondError(w, http.StatusNotFound, "poem not found")
 		return

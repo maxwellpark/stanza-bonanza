@@ -134,7 +134,7 @@ func TestPoemService_Get_Success(t *testing.T) {
 	poems.On("GetByID", mock.Anything, poemID).Return(expected, nil)
 	stanzas.On("ListByPoem", mock.Anything, poemID).Return(stanzaList, nil)
 
-	poem, err := svc.Get(context.Background(), poemID)
+	poem, err := svc.Get(context.Background(), poemID, uuid.Nil)
 	require.NoError(t, err)
 	assert.Equal(t, "My Poem", poem.Title)
 	assert.Len(t, poem.Stanzas, 1)
@@ -146,7 +146,7 @@ func TestPoemService_Get_NotFound(t *testing.T) {
 
 	poems.On("GetByID", mock.Anything, mock.Anything).Return(nil, errors.New("no rows"))
 
-	_, err := svc.Get(context.Background(), uuid.New())
+	_, err := svc.Get(context.Background(), uuid.New(), uuid.Nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "poem not found")
 }
