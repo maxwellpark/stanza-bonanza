@@ -37,7 +37,8 @@ Backend config lives in `backend/internal/config/config.go`, set via env or a `.
 | `PORT` | no | `8080` |
 | `ALLOWED_ORIGINS` | no | `http://localhost:5173` |
 | `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_RP_ORIGINS` | no | localhost defaults |
-| `RESEND_API_KEY` | for magic-link email | — |
+| `RESEND_API_KEY` | for magic-link email | — (no key: link is logged, not sent) |
+| `EMAIL_FROM` | no | `Stanza Bonanza <onboarding@resend.dev>` |
 | `MAGIC_LINK_BASE_URL` | no | `http://localhost:5173/auth/verify` |
 
 ## Deploy
