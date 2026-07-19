@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/maxwellpark/stanzabonanza/backend/internal/config"
 	"github.com/maxwellpark/stanzabonanza/backend/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -94,6 +95,7 @@ func newAuthSvc(users *mockUserStore, sessions *mockSessionStore, links *mockMag
 		sessions:   sessions,
 		magicLinks: links,
 		webAuthns:  &mockWebAuthnStore{},
+		cfg:        &config.Config{SessionSecret: "test-secret"},
 		waSessions: make(map[string]*waSession),
 	}
 }
@@ -150,7 +152,7 @@ func TestAuthService_VerifyMagicLink_Success(t *testing.T) {
 	svc := newAuthSvc(users, sessions, links)
 
 	rawToken, _ := generateToken(32)
-	hash := hashToken(rawToken)
+	hash := hashToken("test-secret", rawToken)
 	linkID := uuid.New()
 	userID := uuid.New()
 
@@ -180,7 +182,7 @@ func TestAuthService_VerifyMagicLink_CreatesUserIfMissing(t *testing.T) {
 	svc := newAuthSvc(users, sessions, links)
 
 	rawToken, _ := generateToken(32)
-	hash := hashToken(rawToken)
+	hash := hashToken("test-secret", rawToken)
 	linkID := uuid.New()
 
 	link := &domain.MagicLink{
@@ -209,7 +211,7 @@ func TestAuthService_VerifyMagicLink_AlreadyUsed(t *testing.T) {
 	svc := newAuthSvc(users, sessions, links)
 
 	rawToken, _ := generateToken(32)
-	hash := hashToken(rawToken)
+	hash := hashToken("test-secret", rawToken)
 	usedAt := time.Now().Add(-1 * time.Minute)
 
 	link := &domain.MagicLink{
@@ -232,7 +234,7 @@ func TestAuthService_VerifyMagicLink_Expired(t *testing.T) {
 	svc := newAuthSvc(users, sessions, links)
 
 	rawToken, _ := generateToken(32)
-	hash := hashToken(rawToken)
+	hash := hashToken("test-secret", rawToken)
 
 	link := &domain.MagicLink{
 		ID:        uuid.New(),
@@ -285,7 +287,7 @@ func TestAuthService_DeleteSession_Success(t *testing.T) {
 
 	sessionID := uuid.New()
 	rawToken, _ := generateToken(32)
-	hash := hashToken(rawToken)
+	hash := hashToken("test-secret", rawToken)
 
 	sessions.On("GetByTokenHash", mock.Anything, hash).Return(&domain.Session{ID: sessionID}, nil)
 	sessions.On("Delete", mock.Anything, sessionID).Return(nil)
@@ -338,8 +340,8 @@ func TestAuthService_UpdateProfile_UserNotFound(t *testing.T) {
 // hashToken / generateToken tests
 
 func TestHashToken_Deterministic(t *testing.T) {
-	h1 := hashToken("mysecret")
-	h2 := hashToken("mysecret")
+	h1 := hashToken("k", "mysecret")
+	h2 := hashToken("k", "mysecret")
 	assert.Equal(t, h1, h2)
 	assert.NotEmpty(t, h1)
 }

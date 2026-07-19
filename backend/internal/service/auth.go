@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -101,7 +102,7 @@ func NewAuthService(
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, token string) (uuid.UUID, error) {
-	var hash = hashToken(token)
+	var hash = hashToken(s.cfg.SessionSecret, token)
 	session, err := s.sessions.GetByTokenHash(ctx, hash)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("invalid session: %w", err)
@@ -132,7 +133,7 @@ func (s *AuthService) RequestMagicLink(ctx context.Context, email string) (strin
 		return "", fmt.Errorf("generating token: %w", err)
 	}
 
-	var hash = hashToken(rawToken)
+	var hash = hashToken(s.cfg.SessionSecret, rawToken)
 	var link = &domain.MagicLink{
 		Email:     email,
 		TokenHash: hash,
@@ -146,7 +147,7 @@ func (s *AuthService) RequestMagicLink(ctx context.Context, email string) (strin
 }
 
 func (s *AuthService) VerifyMagicLink(ctx context.Context, token string) (string, *domain.User, error) {
-	var hash = hashToken(token)
+	var hash = hashToken(s.cfg.SessionSecret, token)
 	link, err := s.magicLinks.GetByTokenHash(ctx, hash)
 	if err != nil {
 		return "", nil, fmt.Errorf("invalid magic link: %w", err)
@@ -189,7 +190,7 @@ func (s *AuthService) CreateSession(ctx context.Context, userID uuid.UUID) (stri
 		return "", fmt.Errorf("generating session token: %w", err)
 	}
 
-	var hash = hashToken(rawToken)
+	var hash = hashToken(s.cfg.SessionSecret, rawToken)
 	var session = &domain.Session{
 		UserID:    userID,
 		TokenHash: hash,
@@ -203,7 +204,7 @@ func (s *AuthService) CreateSession(ctx context.Context, userID uuid.UUID) (stri
 }
 
 func (s *AuthService) DeleteSession(ctx context.Context, token string) error {
-	var hash = hashToken(token)
+	var hash = hashToken(s.cfg.SessionSecret, token)
 	session, err := s.sessions.GetByTokenHash(ctx, hash)
 	if err != nil {
 		return fmt.Errorf("session not found: %w", err)
@@ -388,9 +389,12 @@ func (s *AuthService) FinishLogin(ctx context.Context, sessionKey string, r *htt
 	return user, sessionToken, nil
 }
 
-func hashToken(token string) string {
-	var h = sha256.Sum256([]byte(token))
-	return hex.EncodeToString(h[:])
+// hashToken keys the hash with SESSION_SECRET so a leaked session/magic-link
+// hash can't be used to forge a token without the secret.
+func hashToken(secret, token string) string {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(token))
+	return hex.EncodeToString(mac.Sum(nil))
 }
 
 func generateToken(n int) (string, error) {
