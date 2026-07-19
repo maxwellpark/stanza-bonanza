@@ -89,6 +89,12 @@ func (m *mockWebAuthnStore) UpdateSignCount(ctx context.Context, credentialID []
 	return m.Called(ctx, credentialID, signCount).Error(0)
 }
 
+type mockMailer struct{ mock.Mock }
+
+func (m *mockMailer) SendMagicLink(ctx context.Context, to, link string) error {
+	return m.Called(ctx, to, link).Error(0)
+}
+
 func newAuthSvc(users *mockUserStore, sessions *mockSessionStore, links *mockMagicLinkStore) *AuthService {
 	return &AuthService{
 		users:      users,
@@ -115,6 +121,20 @@ func TestAuthService_RequestMagicLink_DoesNotCreateUser(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
 	users.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}
+
+func TestAuthService_RequestMagicLink_SendsEmailWhenMailerSet(t *testing.T) {
+	links := &mockMagicLinkStore{}
+	svc := newAuthSvc(&mockUserStore{}, &mockSessionStore{}, links)
+	mailer := &mockMailer{}
+	svc.mailer = mailer
+
+	links.On("Create", mock.Anything, mock.AnythingOfType("*domain.MagicLink")).Return(nil)
+	mailer.On("SendMagicLink", mock.Anything, "user@test.com", mock.Anything).Return(nil)
+
+	_, err := svc.RequestMagicLink(context.Background(), "user@test.com")
+	require.NoError(t, err)
+	mailer.AssertCalled(t, "SendMagicLink", mock.Anything, "user@test.com", mock.Anything)
 }
 
 func TestAuthService_RequestMagicLink_RejectsInvalidEmail(t *testing.T) {

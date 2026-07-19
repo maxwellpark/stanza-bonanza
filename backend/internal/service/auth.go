@@ -8,8 +8,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -73,6 +75,7 @@ type AuthService struct {
 	webAuthns  webAuthnStore
 	wac        *webauthn.WebAuthn
 	cfg        *config.Config
+	mailer     Mailer
 
 	waMu       sync.Mutex
 	waSessions map[string]*waSession
@@ -98,6 +101,9 @@ func NewAuthService(
 		wac:        wac,
 		cfg:        cfg,
 		waSessions: make(map[string]*waSession),
+	}
+	if cfg.ResendAPIKey != "" {
+		svc.mailer = NewResendMailer(cfg.ResendAPIKey, cfg.EmailFrom)
 	}
 	go svc.sweepWASessions()
 	return svc
@@ -143,6 +149,17 @@ func (s *AuthService) RequestMagicLink(ctx context.Context, email string) (strin
 	}
 	if err := s.magicLinks.Create(ctx, link); err != nil {
 		return "", fmt.Errorf("storing magic link: %w", err)
+	}
+
+	verifyURL := s.cfg.MagicLinkBaseURL + "?token=" + url.QueryEscape(rawToken)
+	if s.mailer != nil {
+		if err := s.mailer.SendMagicLink(ctx, email, verifyURL); err != nil {
+			log.Printf("sending magic link to %s: %v", email, err)
+			return "", fmt.Errorf("sending magic link: %w", err)
+		}
+	} else {
+		// No RESEND_API_KEY (dev): log the link so local login still works.
+		log.Printf("magic link for %s: %s", email, verifyURL)
 	}
 
 	return rawToken, nil

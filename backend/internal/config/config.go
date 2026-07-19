@@ -14,6 +14,7 @@ type Config struct {
 	WebAuthnRPName   string   `envconfig:"WEBAUTHN_RP_NAME" default:"StanzaBonanza"`
 	WebAuthnOrigins  []string `envconfig:"WEBAUTHN_RP_ORIGINS" default:"http://localhost:5173"`
 	ResendAPIKey     string   `envconfig:"RESEND_API_KEY"`
+	EmailFrom        string   `envconfig:"EMAIL_FROM" default:"Stanza Bonanza <onboarding@resend.dev>"`
 	MagicLinkBaseURL string   `envconfig:"MAGIC_LINK_BASE_URL" default:"http://localhost:5173/auth/verify"`
 }
 
