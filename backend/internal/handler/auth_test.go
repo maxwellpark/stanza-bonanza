@@ -104,7 +104,7 @@ func TestAuthHandler_RequestMagicLink_MissingEmail(t *testing.T) {
 	assert.NotEmpty(t, resp.Error)
 }
 
-// GET /auth/magic-link/verify tests
+// POST /auth/magic-link/verify tests
 
 func TestAuthHandler_VerifyMagicLink_ValidToken(t *testing.T) {
 	svc := &mockAuthService{}
@@ -114,7 +114,7 @@ func TestAuthHandler_VerifyMagicLink_ValidToken(t *testing.T) {
 	user := &domain.User{ID: userID, Email: "user@test.com"}
 	svc.On("VerifyMagicLink", mock.Anything, "validtoken").Return("sessiontoken", user, nil)
 
-	r := httptest.NewRequest(http.MethodGet, "/auth/magic-link/verify?token=validtoken", nil)
+	r := httptest.NewRequest(http.MethodPost, "/auth/magic-link/verify", bytes.NewBufferString(`{"token":"validtoken"}`))
 	w := httptest.NewRecorder()
 
 	h.VerifyMagicLink(w, r)
@@ -136,7 +136,7 @@ func TestAuthHandler_VerifyMagicLink_MissingToken(t *testing.T) {
 	svc := &mockAuthService{}
 	h := newAuthHandler(svc)
 
-	r := httptest.NewRequest(http.MethodGet, "/auth/magic-link/verify", nil)
+	r := httptest.NewRequest(http.MethodPost, "/auth/magic-link/verify", bytes.NewBufferString(`{}`))
 	w := httptest.NewRecorder()
 
 	h.VerifyMagicLink(w, r)

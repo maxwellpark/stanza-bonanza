@@ -94,7 +94,7 @@ func (s *Server) setupRoutes() {
 		// Auth (public)
 		r.Route("/auth", func(r chi.Router) {
 			r.With(strictRL.Middleware).Post("/magic-link", authHandler.RequestMagicLink)
-			r.Get("/magic-link/verify", authHandler.VerifyMagicLink)
+			r.With(strictRL.Middleware).Post("/magic-link/verify", authHandler.VerifyMagicLink)
 			r.With(authMiddleware).Post("/register/begin", authHandler.BeginRegistration)
 			r.With(authMiddleware).Post("/register/finish", authHandler.FinishRegistration)
 			r.With(strictRL.Middleware).Post("/login/begin", authHandler.BeginLogin)
