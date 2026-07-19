@@ -31,6 +31,42 @@ func (r *LikeRepository) Delete(ctx context.Context, userID, poemID uuid.UUID) e
 	return err
 }
 
+// ToggleLike flips the like and adjusts poems.like_count in one transaction so
+// concurrent requests can't drift the count. Returns the resulting liked state.
+func (r *LikeRepository) ToggleLike(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer tx.Rollback(ctx)
+
+	del, err := tx.Exec(ctx, `DELETE FROM likes WHERE user_id = $1 AND poem_id = $2`, userID, poemID)
+	if err != nil {
+		return false, err
+	}
+	if del.RowsAffected() > 0 {
+		if _, err := tx.Exec(ctx, `UPDATE poems SET like_count = like_count - 1 WHERE id = $1`, poemID); err != nil {
+			return false, err
+		}
+		return false, tx.Commit(ctx)
+	}
+
+	ins, err := tx.Exec(ctx,
+		`INSERT INTO likes (user_id, poem_id, created_at) VALUES ($1, $2, now())
+		 ON CONFLICT (user_id, poem_id) DO NOTHING`,
+		userID, poemID,
+	)
+	if err != nil {
+		return false, err
+	}
+	if ins.RowsAffected() > 0 {
+		if _, err := tx.Exec(ctx, `UPDATE poems SET like_count = like_count + 1 WHERE id = $1`, poemID); err != nil {
+			return false, err
+		}
+	}
+	return true, tx.Commit(ctx)
+}
+
 func (r *LikeRepository) Exists(ctx context.Context, userID, poemID uuid.UUID) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
