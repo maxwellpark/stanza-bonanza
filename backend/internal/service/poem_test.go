@@ -264,7 +264,7 @@ func TestPoemService_ReviewStanza_Approve_SendsNotification(t *testing.T) {
 	stanzaID := uuid.New()
 
 	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
-	stanzaList := []domain.Stanza{{ID: stanzaID, AuthorID: submitterID}}
+	stanzaList := []domain.Stanza{{ID: stanzaID, PoemID: poemID, AuthorID: submitterID, Status: domain.StanzaPending}}
 
 	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
 	stanzas.On("UpdateStatus", mock.Anything, stanzaID, domain.StanzaApproved).Return(nil)
@@ -289,7 +289,7 @@ func TestPoemService_ReviewStanza_Reject_SendsNotification(t *testing.T) {
 	stanzaID := uuid.New()
 
 	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
-	stanzaList := []domain.Stanza{{ID: stanzaID, AuthorID: submitterID}}
+	stanzaList := []domain.Stanza{{ID: stanzaID, PoemID: poemID, AuthorID: submitterID, Status: domain.StanzaPending}}
 
 	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
 	stanzas.On("UpdateStatus", mock.Anything, stanzaID, domain.StanzaRejected).Return(nil)
@@ -299,6 +299,47 @@ func TestPoemService_ReviewStanza_Reject_SendsNotification(t *testing.T) {
 	err := svc.ReviewStanza(context.Background(), authorID, poemID, stanzaID, false)
 	require.NoError(t, err)
 	notifs.AssertNumberOfCalls(t, "Create", 1)
+}
+
+func TestPoemService_ReviewStanza_ForeignStanza_Error(t *testing.T) {
+	poems := &mockPoemStore{}
+	stanzas := &mockStanzaStore{}
+	svc := newPoemSvc(poems, stanzas, &mockPoemNotifStore{})
+
+	authorID := uuid.New()
+	poemID := uuid.New()
+	stanzaID := uuid.New()
+
+	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
+	// stanzaID is not in this poem's list.
+	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
+	stanzas.On("ListByPoem", mock.Anything, poemID).Return([]domain.Stanza{{ID: uuid.New()}}, nil)
+
+	err := svc.ReviewStanza(context.Background(), authorID, poemID, stanzaID, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "does not belong")
+	stanzas.AssertNotCalled(t, "UpdateStatus", mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestPoemService_ReviewStanza_AlreadyReviewed_Error(t *testing.T) {
+	poems := &mockPoemStore{}
+	stanzas := &mockStanzaStore{}
+	svc := newPoemSvc(poems, stanzas, &mockPoemNotifStore{})
+
+	authorID := uuid.New()
+	poemID := uuid.New()
+	stanzaID := uuid.New()
+
+	poem := &domain.Poem{ID: poemID, AuthorID: authorID}
+	// already approved, so re-approving must not double-count.
+	stanzaList := []domain.Stanza{{ID: stanzaID, PoemID: poemID, Status: domain.StanzaApproved}}
+	poems.On("GetByID", mock.Anything, poemID).Return(poem, nil)
+	stanzas.On("ListByPoem", mock.Anything, poemID).Return(stanzaList, nil)
+
+	err := svc.ReviewStanza(context.Background(), authorID, poemID, stanzaID, true)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not pending")
+	poems.AssertNotCalled(t, "IncrementCounter", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
 
 func TestPoemService_ReviewStanza_NotAuthor_Error(t *testing.T) {

@@ -193,12 +193,31 @@ func (s *PoemService) ReviewStanza(ctx context.Context, userID, poemID, stanzaID
 		return fmt.Errorf("not the poem author")
 	}
 
+	// The stanza must belong to this poem and still be pending, else an author
+	// could review a foreign stanza and re-approving would double-count.
+	stanzas, err := s.stanzas.ListByPoem(ctx, poemID)
+	if err != nil {
+		return fmt.Errorf("loading stanzas: %w", err)
+	}
+	var target *domain.Stanza
+	for i := range stanzas {
+		if stanzas[i].ID == stanzaID {
+			target = &stanzas[i]
+			break
+		}
+	}
+	if target == nil {
+		return fmt.Errorf("stanza does not belong to this poem")
+	}
+	if target.Status != domain.StanzaPending {
+		return fmt.Errorf("stanza is not pending review")
+	}
+
 	var status domain.StanzaStatus
 	var notifType domain.NotificationType
 	if approved {
 		status = domain.StanzaApproved
 		notifType = domain.NotifStanzaApproved
-		_ = s.poems.IncrementCounter(ctx, poemID, "stanza_count", 1)
 	} else {
 		status = domain.StanzaRejected
 		notifType = domain.NotifStanzaRejected
@@ -207,20 +226,17 @@ func (s *PoemService) ReviewStanza(ctx context.Context, userID, poemID, stanzaID
 	if err := s.stanzas.UpdateStatus(ctx, stanzaID, status); err != nil {
 		return fmt.Errorf("updating stanza status: %w", err)
 	}
+	if approved {
+		_ = s.poems.IncrementCounter(ctx, poemID, "stanza_count", 1)
+	}
 
-	stanzas, err := s.stanzas.ListByPoem(ctx, poemID)
-	if err == nil {
-		for _, st := range stanzas {
-			if st.ID == stanzaID && st.AuthorID != userID {
-				_ = s.notifs.Create(ctx, &domain.Notification{
-					RecipientID: st.AuthorID,
-					ActorID:     &userID,
-					Type:        notifType,
-					PoemID:      &poemID,
-				})
-				break
-			}
-		}
+	if target.AuthorID != userID {
+		_ = s.notifs.Create(ctx, &domain.Notification{
+			RecipientID: target.AuthorID,
+			ActorID:     &userID,
+			Type:        notifType,
+			PoemID:      &poemID,
+		})
 	}
 
 	return nil
