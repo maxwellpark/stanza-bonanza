@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { PoemFormat, ApprovalMode } from '@/types/poem';
 import { useCreatePoem } from '@/hooks/usePoems';
 import { formatPoemFormat } from '@/lib/utils';
@@ -122,6 +124,14 @@ export function PoemEditor() {
               className="w-full resize-none rounded-lg border border-parchment-dark bg-white px-4 py-3 text-base leading-relaxed text-ink outline-none transition-colors focus:border-accent"
               style={{ fontFamily: 'var(--font-body)' }}
             />
+            {text.trim() && (
+              <div className="mt-2">
+                <span className="mb-1 block font-sans text-xs text-feather">Preview</span>
+                <div className="prose prose-sm max-w-none rounded-lg border border-dashed border-parchment-dark bg-parchment/50 px-4 py-3 text-base leading-relaxed text-ink" style={{ fontFamily: 'var(--font-body)' }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{text.replace(/\n/g, '  \n')}</ReactMarkdown>
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
