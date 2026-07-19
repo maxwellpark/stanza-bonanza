@@ -43,6 +43,8 @@ export interface Stanza {
   position: number;
   literaryDevice?: string;
   status: StanzaStatus;
+  likeCount: number;
+  likedByMe?: boolean;
   createdAt: string;
 }
 

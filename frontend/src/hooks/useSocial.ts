@@ -15,6 +15,16 @@ export function useToggleLike(poemId: string) {
   });
 }
 
+export function useToggleStanzaLike(poemId: string, stanzaId: string) {
+  var queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<{ liked: boolean }>(`/poems/${poemId}/stanzas/${stanzaId}/like`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poem', poemId] });
+    },
+  });
+}
+
 export function useComments(poemId: string, params?: PaginationParams) {
   return useQuery({
     queryKey: ['comments', poemId, params],
