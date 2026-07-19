@@ -28,6 +28,7 @@ export interface Poem {
   stanzaCount: number;
   commentCount: number;
   likedByMe?: boolean;
+  tags?: string[];
   stanzas?: Stanza[];
   createdAt: string;
   updatedAt: string;
@@ -52,6 +53,7 @@ export interface CreatePoemInput {
   format: PoemFormat;
   approvalMode: ApprovalMode;
   maxStanzas?: number;
+  tags?: string[];
 }
 
 export interface SubmitStanzaInput {

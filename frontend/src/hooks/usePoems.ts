@@ -3,12 +3,14 @@ import { api } from '@/lib/api';
 import type { Poem, CreatePoemInput, SubmitStanzaInput, Stanza } from '@/types/poem';
 import type { PaginatedResponse, PaginationParams } from '@/types/api';
 
-export function usePoems(params?: PaginationParams & { format?: string; sort?: string }) {
+export function usePoems(params?: PaginationParams & { format?: string; sort?: string; q?: string; tag?: string }) {
   var query = new URLSearchParams();
   if (params?.page) { query.set('page', String(params.page)); }
   if (params?.pageSize) { query.set('pageSize', String(params.pageSize)); }
   if (params?.format) { query.set('format', params.format); }
   if (params?.sort) { query.set('sort', params.sort); }
+  if (params?.q) { query.set('q', params.q); }
+  if (params?.tag) { query.set('tag', params.tag); }
 
   return useQuery({
     queryKey: ['poems', params],

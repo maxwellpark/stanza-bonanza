@@ -66,6 +66,20 @@ export function PoemDetail({ poem }: PoemDetailProps) {
         {poem.description && (
           <p className="text-base leading-relaxed text-feather">{poem.description}</p>
         )}
+
+        {poem.tags && poem.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {poem.tags.map((t) => (
+              <Link
+                key={t}
+                to={`/explore?tag=${encodeURIComponent(t)}`}
+                className="rounded-full bg-parchment-dark px-2.5 py-0.5 font-sans text-xs text-feather no-underline hover:text-accent"
+              >
+                #{t}
+              </Link>
+            ))}
+          </div>
+        )}
       </header>
 
       {isAuthor && (

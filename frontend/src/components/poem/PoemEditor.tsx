@@ -30,6 +30,7 @@ export function PoemEditor() {
   var [format, setFormat] = useState<PoemFormat>('free_verse');
   var [approvalMode, setApprovalMode] = useState<ApprovalMode>('open');
   var [maxStanzas, setMaxStanzas] = useState('');
+  var [tags, setTags] = useState('');
   var [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
@@ -41,6 +42,12 @@ export function PoemEditor() {
       return;
     }
 
+    var parsedTags = tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 10);
+
     try {
       var poem = await mutation.mutateAsync({
         title: title.trim(),
@@ -49,6 +56,7 @@ export function PoemEditor() {
         format,
         approvalMode,
         maxStanzas: maxStanzas ? Number(maxStanzas) : undefined,
+        tags: parsedTags.length ? parsedTags : undefined,
       });
       navigate(`/poems/${poem.id}`);
     } catch (err) {
@@ -154,6 +162,20 @@ export function PoemEditor() {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="tags" className="mb-1 block font-sans text-sm font-medium text-ink">
+              Tags <span className="font-normal text-feather">(optional, comma-separated)</span>
+            </label>
+            <input
+              id="tags"
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="nature, love, autumn"
+              className="w-full rounded-lg border border-parchment-dark bg-white px-4 py-2 font-sans text-sm text-ink outline-none transition-colors focus:border-accent"
+            />
           </div>
 
           <div>

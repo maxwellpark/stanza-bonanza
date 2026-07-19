@@ -52,6 +52,21 @@ export function PoemCard({ poem }: PoemCardProps) {
         </div>
       )}
 
+      {poem.tags && poem.tags.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {poem.tags.map((tag) => (
+            <Link
+              key={tag}
+              to={`/explore?tag=${encodeURIComponent(tag)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="rounded-full bg-parchment-dark px-2 py-0.5 font-sans text-xs text-feather no-underline hover:text-accent"
+            >
+              #{tag}
+            </Link>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-4 font-sans text-sm text-feather">
         <span className="flex items-center gap-1">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
