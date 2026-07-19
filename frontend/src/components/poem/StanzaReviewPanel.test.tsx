@@ -35,6 +35,7 @@ var pendingStanzas: Stanza[] = [
     position: 1,
     literaryDevice: 'personification',
     status: 'pending',
+    likeCount: 0,
     createdAt: '2024-01-01T00:00:00Z',
   },
   {
@@ -54,6 +55,7 @@ var pendingStanzas: Stanza[] = [
     text: 'O wild West Wind, thou breath of Autumn\'s being',
     position: 2,
     status: 'pending',
+    likeCount: 0,
     createdAt: '2024-01-01T00:00:00Z',
   },
 ];

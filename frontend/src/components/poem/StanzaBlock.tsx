@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Stanza } from '@/types/poem';
+import { useToggleStanzaLike } from '@/hooks/useSocial';
+import { useAuthStore } from '@/stores/authStore';
+import { useUIStore } from '@/stores/uiStore';
 
 interface StanzaBlockProps {
   stanza: Stanza;
@@ -16,6 +20,37 @@ var deviceColors: Record<string, string> = {
 };
 
 export function StanzaBlock({ stanza, isLast }: StanzaBlockProps) {
+  var { isAuthenticated } = useAuthStore();
+  var { openLogin } = useUIStore();
+  var mutation = useToggleStanzaLike(stanza.poemId, stanza.id);
+  var [liked, setLiked] = useState(stanza.likedByMe ?? false);
+  var [count, setCount] = useState(stanza.likeCount);
+
+  // Resync to server state after a refetch (see the poem like button).
+  useEffect(() => {
+    if (mutation.isPending) {
+      return;
+    }
+    setLiked(stanza.likedByMe ?? false);
+    setCount(stanza.likeCount);
+  }, [stanza.likedByMe, stanza.likeCount, mutation.isPending]);
+
+  function toggleLike() {
+    if (!isAuthenticated) {
+      openLogin();
+      return;
+    }
+    var next = !liked;
+    setLiked(next);
+    setCount((c) => c + (next ? 1 : -1));
+    mutation.mutate(undefined, {
+      onError: () => {
+        setLiked(!next);
+        setCount((c) => c + (next ? -1 : 1));
+      },
+    });
+  }
+
   return (
     <div className="py-4">
       <div className="poem-text">{stanza.text}</div>
@@ -45,6 +80,22 @@ export function StanzaBlock({ stanza, isLast }: StanzaBlockProps) {
             Awaiting approval
           </span>
         )}
+
+        <button
+          onClick={toggleLike}
+          aria-label="Like stanza"
+          className="ml-auto flex items-center gap-1 font-sans text-xs text-feather transition-colors hover:text-error"
+        >
+          <svg
+            className={`h-4 w-4 transition-colors ${liked ? 'fill-error text-error' : 'fill-none'}`}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+          {count > 0 && count}
+        </button>
       </div>
 
       {!isLast && (
