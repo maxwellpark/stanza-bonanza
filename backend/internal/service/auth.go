@@ -8,6 +8,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/mail"
+	"strings"
 	"sync"
 	"time"
 
@@ -107,22 +109,24 @@ func (s *AuthService) ValidateSession(ctx context.Context, token string) (uuid.U
 	return session.UserID, nil
 }
 
-func (s *AuthService) RequestMagicLink(ctx context.Context, email string) (string, error) {
-	_, err := s.users.GetByEmail(ctx, email)
+// normalizeEmail validates format and lowercases so case variants don't
+// become separate accounts.
+func normalizeEmail(email string) (string, error) {
+	addr, err := mail.ParseAddress(strings.TrimSpace(email))
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			var user = &domain.User{
-				Email:       email,
-				DisplayName: email,
-			}
-			if err := s.users.Create(ctx, user); err != nil {
-				return "", fmt.Errorf("creating user: %w", err)
-			}
-		} else {
-			return "", fmt.Errorf("looking up user: %w", err)
-		}
+		return "", fmt.Errorf("invalid email address")
+	}
+	return strings.ToLower(addr.Address), nil
+}
+
+func (s *AuthService) RequestMagicLink(ctx context.Context, email string) (string, error) {
+	email, err := normalizeEmail(email)
+	if err != nil {
+		return "", err
 	}
 
+	// Don't create the user here; unauthenticated requests shouldn't mint rows
+	// for arbitrary addresses. The user is created on successful verify.
 	rawToken, err := generateToken(32)
 	if err != nil {
 		return "", fmt.Errorf("generating token: %w", err)
@@ -161,7 +165,14 @@ func (s *AuthService) VerifyMagicLink(ctx context.Context, token string) (string
 
 	user, err := s.users.GetByEmail(ctx, link.Email)
 	if err != nil {
-		return "", nil, fmt.Errorf("finding user: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			user = &domain.User{Email: link.Email, DisplayName: link.Email}
+			if err := s.users.Create(ctx, user); err != nil {
+				return "", nil, fmt.Errorf("creating user: %w", err)
+			}
+		} else {
+			return "", nil, fmt.Errorf("finding user: %w", err)
+		}
 	}
 
 	sessionToken, err := s.CreateSession(ctx, user.ID)
