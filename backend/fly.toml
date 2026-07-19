@@ -9,6 +9,9 @@ primary_region = 'lhr'
 [build]
   dockerfile = 'Dockerfile'
 
+[deploy]
+  release_command = "sh -c '/usr/local/bin/migrate -path /migrations -database \"$DATABASE_URL\" up'"
+
 [env]
   PORT = '8080'
 
