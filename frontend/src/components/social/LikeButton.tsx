@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToggleLike } from '@/hooks/useSocial';
 import { useAuthStore } from '@/stores/authStore';
@@ -17,6 +17,16 @@ export function LikeButton({ poemId, likeCount, isLiked: initialLiked }: LikeBut
   var mutation = useToggleLike(poemId);
   var { isAuthenticated } = useAuthStore();
   var { openLogin } = useUIStore();
+
+  // Resync to server truth when fresh props arrive (e.g. after a refetch),
+  // but not mid-mutation or the optimistic update would be clobbered.
+  useEffect(() => {
+    if (mutation.isPending) {
+      return;
+    }
+    setOptimisticLiked(initialLiked ?? false);
+    setOptimisticCount(likeCount);
+  }, [initialLiked, likeCount, mutation.isPending]);
 
   function handleClick() {
     if (!isAuthenticated) {
