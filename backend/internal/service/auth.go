@@ -90,7 +90,7 @@ func NewAuthService(
 		RPID:          cfg.WebAuthnRPID,
 		RPOrigins:     cfg.WebAuthnOrigins,
 	})
-	return &AuthService{
+	svc := &AuthService{
 		users:      users,
 		sessions:   sessions,
 		magicLinks: magicLinks,
@@ -99,6 +99,8 @@ func NewAuthService(
 		cfg:        cfg,
 		waSessions: make(map[string]*waSession),
 	}
+	go svc.sweepWASessions()
+	return svc
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, token string) (uuid.UUID, error) {
@@ -245,6 +247,26 @@ func (s *AuthService) popWASession(key string) (*webauthn.SessionData, bool) {
 	}
 	delete(s.waSessions, key)
 	return sess.data, true
+}
+
+// sweepWASessions evicts abandoned (never-consumed) ceremonies so the map
+// can't grow without bound. Cross-machine correctness still needs a shared
+// store; this only bounds the single-process leak.
+func (s *AuthService) sweepWASessions() {
+	ticker := time.NewTicker(5 * time.Minute)
+	for range ticker.C {
+		s.cleanupWASessions(time.Now())
+	}
+}
+
+func (s *AuthService) cleanupWASessions(now time.Time) {
+	s.waMu.Lock()
+	defer s.waMu.Unlock()
+	for k, sess := range s.waSessions {
+		if now.After(sess.expiresAt) {
+			delete(s.waSessions, k)
+		}
+	}
 }
 
 func (s *AuthService) buildWebAuthnUser(ctx context.Context, user *domain.User) (*webAuthnUser, error) {

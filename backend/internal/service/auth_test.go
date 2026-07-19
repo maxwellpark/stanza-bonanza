@@ -355,3 +355,16 @@ func TestGenerateToken_UniqueOutputs(t *testing.T) {
 	// 32 bytes hex-encoded = 64 chars.
 	assert.Len(t, t1, 64)
 }
+
+func TestAuthService_CleanupWASessions(t *testing.T) {
+	svc := newAuthSvc(&mockUserStore{}, &mockSessionStore{}, &mockMagicLinkStore{})
+	svc.waSessions["expired"] = &waSession{expiresAt: time.Now().Add(-time.Minute)}
+	svc.waSessions["live"] = &waSession{expiresAt: time.Now().Add(time.Minute)}
+
+	svc.cleanupWASessions(time.Now())
+
+	_, expiredOK := svc.waSessions["expired"]
+	assert.False(t, expiredOK, "expired ceremony should be evicted")
+	_, liveOK := svc.waSessions["live"]
+	assert.True(t, liveOK, "live ceremony should remain")
+}
