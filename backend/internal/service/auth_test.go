@@ -100,36 +100,45 @@ func newAuthSvc(users *mockUserStore, sessions *mockSessionStore, links *mockMag
 
 // RequestMagicLink tests
 
-func TestAuthService_RequestMagicLink_NewUser(t *testing.T) {
+func TestAuthService_RequestMagicLink_DoesNotCreateUser(t *testing.T) {
 	users := &mockUserStore{}
 	sessions := &mockSessionStore{}
 	links := &mockMagicLinkStore{}
 	svc := newAuthSvc(users, sessions, links)
 
-	users.On("GetByEmail", mock.Anything, "new@test.com").Return(nil, pgx.ErrNoRows)
-	users.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+	// Request only stores a link now; the user is created on verify.
 	links.On("Create", mock.Anything, mock.AnythingOfType("*domain.MagicLink")).Return(nil)
 
 	token, err := svc.RequestMagicLink(context.Background(), "new@test.com")
 	require.NoError(t, err)
 	assert.NotEmpty(t, token)
-	users.AssertCalled(t, "Create", mock.Anything, mock.AnythingOfType("*domain.User"))
+	users.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
 }
 
-func TestAuthService_RequestMagicLink_ExistingUser(t *testing.T) {
+func TestAuthService_RequestMagicLink_RejectsInvalidEmail(t *testing.T) {
 	users := &mockUserStore{}
 	sessions := &mockSessionStore{}
 	links := &mockMagicLinkStore{}
 	svc := newAuthSvc(users, sessions, links)
 
-	existing := &domain.User{ID: uuid.New(), Email: "old@test.com"}
-	users.On("GetByEmail", mock.Anything, "old@test.com").Return(existing, nil)
-	links.On("Create", mock.Anything, mock.AnythingOfType("*domain.MagicLink")).Return(nil)
+	_, err := svc.RequestMagicLink(context.Background(), "not-an-email")
+	require.Error(t, err)
+	links.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+}
 
-	token, err := svc.RequestMagicLink(context.Background(), "old@test.com")
+func TestAuthService_RequestMagicLink_NormalizesEmail(t *testing.T) {
+	users := &mockUserStore{}
+	sessions := &mockSessionStore{}
+	links := &mockMagicLinkStore{}
+	svc := newAuthSvc(users, sessions, links)
+
+	var stored *domain.MagicLink
+	links.On("Create", mock.Anything, mock.AnythingOfType("*domain.MagicLink")).
+		Run(func(args mock.Arguments) { stored = args.Get(1).(*domain.MagicLink) }).Return(nil)
+
+	_, err := svc.RequestMagicLink(context.Background(), "  Mixed@Case.COM ")
 	require.NoError(t, err)
-	assert.NotEmpty(t, token)
-	users.AssertNotCalled(t, "Create", mock.Anything, mock.Anything)
+	assert.Equal(t, "mixed@case.com", stored.Email)
 }
 
 // VerifyMagicLink tests
@@ -162,6 +171,35 @@ func TestAuthService_VerifyMagicLink_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, sessionToken)
 	assert.Equal(t, userID, returnedUser.ID)
+}
+
+func TestAuthService_VerifyMagicLink_CreatesUserIfMissing(t *testing.T) {
+	users := &mockUserStore{}
+	sessions := &mockSessionStore{}
+	links := &mockMagicLinkStore{}
+	svc := newAuthSvc(users, sessions, links)
+
+	rawToken, _ := generateToken(32)
+	hash := hashToken(rawToken)
+	linkID := uuid.New()
+
+	link := &domain.MagicLink{
+		ID:        linkID,
+		Email:     "fresh@test.com",
+		TokenHash: hash,
+		ExpiresAt: time.Now().Add(15 * time.Minute),
+	}
+
+	links.On("GetByTokenHash", mock.Anything, hash).Return(link, nil)
+	links.On("MarkUsed", mock.Anything, linkID).Return(nil)
+	users.On("GetByEmail", mock.Anything, "fresh@test.com").Return(nil, pgx.ErrNoRows)
+	users.On("Create", mock.Anything, mock.AnythingOfType("*domain.User")).Return(nil)
+	sessions.On("Create", mock.Anything, mock.AnythingOfType("*domain.Session")).Return(nil)
+
+	sessionToken, _, err := svc.VerifyMagicLink(context.Background(), rawToken)
+	require.NoError(t, err)
+	assert.NotEmpty(t, sessionToken)
+	users.AssertCalled(t, "Create", mock.Anything, mock.AnythingOfType("*domain.User"))
 }
 
 func TestAuthService_VerifyMagicLink_AlreadyUsed(t *testing.T) {
