@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { Poem } from '@/types/poem';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { usePublishPoem } from '@/hooks/usePoems';
 import { formatDate } from '@/lib/utils';
 import { PoemFormatBadge } from './PoemFormatBadge';
 import { StanzaBlock } from './StanzaBlock';
@@ -20,6 +21,7 @@ export function PoemDetail({ poem }: PoemDetailProps) {
   var [shared, setShared] = useState(false);
   var { isAuthenticated, user } = useAuthStore();
   var { openLogin } = useUIStore();
+  var publish = usePublishPoem(poem.id);
 
   async function handleShare() {
     var url = window.location.href;
@@ -97,6 +99,21 @@ export function PoemDetail({ poem }: PoemDetailProps) {
           </div>
         )}
       </header>
+
+      {isAuthor && poem.published === false && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-accent/50 bg-accent/5 px-4 py-3">
+          <span className="font-sans text-sm text-ink">
+            This is a draft. Only you can see it.
+          </span>
+          <button
+            onClick={() => publish.mutate()}
+            disabled={publish.isPending}
+            className="btn-primary disabled:opacity-50"
+          >
+            {publish.isPending ? 'Publishing...' : 'Publish'}
+          </button>
+        </div>
+      )}
 
       {isAuthor && (
         <StanzaReviewPanel poemId={poem.id} pendingStanzas={pendingStanzas} />

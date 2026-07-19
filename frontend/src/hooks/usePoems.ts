@@ -26,6 +26,25 @@ export function usePoem(id: string) {
   });
 }
 
+export function useDrafts() {
+  return useQuery({
+    queryKey: ['drafts'],
+    queryFn: () => api.get<PaginatedResponse<Poem>>('/poems/drafts'),
+  });
+}
+
+export function usePublishPoem(poemId: string) {
+  var queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post(`/poems/${poemId}/publish`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['poem', poemId] });
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+      queryClient.invalidateQueries({ queryKey: ['poems'] });
+    },
+  });
+}
+
 export function useCreatePoem() {
   var queryClient = useQueryClient();
   return useMutation({

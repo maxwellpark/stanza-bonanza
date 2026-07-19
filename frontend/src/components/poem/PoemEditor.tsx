@@ -35,8 +35,7 @@ export function PoemEditor() {
   var [tags, setTags] = useState('');
   var [error, setError] = useState('');
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function submit(draft: boolean) {
     setError('');
 
     if (!title.trim() || !text.trim()) {
@@ -59,6 +58,7 @@ export function PoemEditor() {
         approvalMode,
         maxStanzas: maxStanzas ? Number(maxStanzas) : undefined,
         tags: parsedTags.length ? parsedTags : undefined,
+        draft,
       });
       navigate(`/poems/${poem.id}`);
     } catch (err) {
@@ -80,7 +80,7 @@ export function PoemEditor() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={(e) => { e.preventDefault(); submit(false); }} className="flex flex-col gap-5">
           <div>
             <label htmlFor="title" className="mb-1 block font-sans text-sm font-medium text-ink">
               Title
@@ -207,13 +207,23 @@ export function PoemEditor() {
             <p className="font-sans text-sm text-error">{error}</p>
           )}
 
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className="btn-primary disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Creating...' : 'Create Poem'}
-          </button>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="btn-primary disabled:opacity-50"
+            >
+              {mutation.isPending ? 'Saving...' : 'Publish Poem'}
+            </button>
+            <button
+              type="button"
+              onClick={() => submit(true)}
+              disabled={mutation.isPending}
+              className="btn-secondary disabled:opacity-50"
+            >
+              Save as Draft
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -39,6 +39,11 @@ export function Navbar() {
               Feed
             </Link>
           )}
+          {isAuthenticated && (
+            <Link to="/drafts" className="font-sans text-sm text-feather transition-colors hover:text-ink">
+              Drafts
+            </Link>
+          )}
         </div>
 
         <div className="hidden items-center gap-4 md:flex">
@@ -100,6 +105,15 @@ export function Navbar() {
                   className="flex min-h-[44px] items-center font-sans text-base text-feather transition-colors hover:text-ink"
                 >
                   Feed
+                </Link>
+              )}
+              {isAuthenticated && (
+                <Link
+                  to="/drafts"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex min-h-[44px] items-center font-sans text-base text-feather transition-colors hover:text-ink"
+                >
+                  Drafts
                 </Link>
               )}
               {isAuthenticated && user ? (
