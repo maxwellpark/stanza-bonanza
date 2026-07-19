@@ -4,9 +4,9 @@ import { useHallOfFame } from '@/hooks/usePoems';
 import { PoemCard } from '@/components/poem/PoemCard';
 
 export function HallOfFamePage() {
-  var [page, setPage] = useState(1);
-  var { data, isLoading } = useHallOfFame({ page, pageSize: 12 });
-  var totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useHallOfFame({ page, pageSize: 12 });
+  const totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
 
   return (
     <div>

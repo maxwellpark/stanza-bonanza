@@ -39,7 +39,6 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
       - run: pnpm build
       - run: pnpm exec vitest run
-      # lint is intentionally not a gate yet: the tree has ~219 lint errors
-      # (mostly no-var). Add `pnpm lint` here after the lint cleanup.

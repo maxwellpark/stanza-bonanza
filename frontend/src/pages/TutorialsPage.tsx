@@ -4,14 +4,14 @@ import { useTutorials } from '@/hooks/useTutorials';
 import { PoemFormatBadge } from '@/components/poem/PoemFormatBadge';
 import type { Difficulty } from '@/types/tutorial';
 
-var difficultyColors: Record<Difficulty, string> = {
+const difficultyColors: Record<Difficulty, string> = {
   beginner: 'bg-green-100 text-green-700',
   intermediate: 'bg-yellow-100 text-yellow-700',
   advanced: 'bg-red-100 text-red-700',
 };
 
 export function TutorialsPage() {
-  var { data: tutorials, isLoading } = useTutorials();
+  const { data: tutorials, isLoading } = useTutorials();
 
   return (
     <div>

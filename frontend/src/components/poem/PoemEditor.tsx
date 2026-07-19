@@ -6,7 +6,7 @@ import type { PoemFormat, ApprovalMode } from '@/types/poem';
 import { useCreatePoem } from '@/hooks/usePoems';
 import { formatPoemFormat } from '@/lib/utils';
 
-var allFormats: PoemFormat[] = [
+const allFormats: PoemFormat[] = [
   'free_verse',
   'haiku',
   'sonnet',
@@ -16,24 +16,24 @@ var allFormats: PoemFormat[] = [
   'custom',
 ];
 
-var approvalOptions: { value: ApprovalMode; label: string; description: string }[] = [
+const approvalOptions: { value: ApprovalMode; label: string; description: string }[] = [
   { value: 'open', label: 'Open', description: 'Anyone can add stanzas immediately' },
   { value: 'approval_required', label: 'Requires Approval', description: 'Stanzas must be approved by you' },
   { value: 'closed', label: 'Closed', description: 'No one else can add stanzas' },
 ];
 
 export function PoemEditor() {
-  var navigate = useNavigate();
-  var mutation = useCreatePoem();
+  const navigate = useNavigate();
+  const mutation = useCreatePoem();
 
-  var [title, setTitle] = useState('');
-  var [description, setDescription] = useState('');
-  var [text, setText] = useState('');
-  var [format, setFormat] = useState<PoemFormat>('free_verse');
-  var [approvalMode, setApprovalMode] = useState<ApprovalMode>('open');
-  var [maxStanzas, setMaxStanzas] = useState('');
-  var [tags, setTags] = useState('');
-  var [error, setError] = useState('');
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [text, setText] = useState('');
+  const [format, setFormat] = useState<PoemFormat>('free_verse');
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>('open');
+  const [maxStanzas, setMaxStanzas] = useState('');
+  const [tags, setTags] = useState('');
+  const [error, setError] = useState('');
 
   async function submit(draft: boolean) {
     setError('');
@@ -43,14 +43,14 @@ export function PoemEditor() {
       return;
     }
 
-    var parsedTags = tags
+    const parsedTags = tags
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
       .slice(0, 10);
 
     try {
-      var poem = await mutation.mutateAsync({
+      const poem = await mutation.mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
         text: text.trim(),

@@ -6,16 +6,16 @@ import { useUIStore } from '@/stores/uiStore';
 import { NotificationsPanel } from './NotificationsPanel';
 import { cn } from '@/lib/utils';
 
-var publicLinks = [
+const publicLinks = [
   { to: '/explore', label: 'Explore' },
   { to: '/hall-of-fame', label: 'Hall of Fame' },
   { to: '/tutorials', label: 'Tutorials' },
 ];
 
 export function Navbar() {
-  var [mobileOpen, setMobileOpen] = useState(false);
-  var { user, isAuthenticated } = useAuthStore();
-  var { openLogin } = useUIStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+  const { openLogin } = useUIStore();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-parchment-dark bg-white/80 backdrop-blur">

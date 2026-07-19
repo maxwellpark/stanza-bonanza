@@ -4,7 +4,7 @@ import type { Poem, CreatePoemInput, SubmitStanzaInput, Stanza } from '@/types/p
 import type { PaginatedResponse, PaginationParams } from '@/types/api';
 
 export function usePoems(params?: PaginationParams & { format?: string; sort?: string; q?: string; tag?: string }) {
-  var query = new URLSearchParams();
+  const query = new URLSearchParams();
   if (params?.page) { query.set('page', String(params.page)); }
   if (params?.pageSize) { query.set('pageSize', String(params.pageSize)); }
   if (params?.format) { query.set('format', params.format); }
@@ -34,7 +34,7 @@ export function useDrafts() {
 }
 
 export function usePublishPoem(poemId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () => api.post(`/poems/${poemId}/publish`),
     onSuccess: () => {
@@ -46,7 +46,7 @@ export function usePublishPoem(poemId: string) {
 }
 
 export function useCreatePoem() {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreatePoemInput) => api.post<Poem>('/poems', input),
     onSuccess: () => {
@@ -56,7 +56,7 @@ export function useCreatePoem() {
 }
 
 export function useSubmitStanza(poemId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: SubmitStanzaInput) =>
       api.post<Stanza>(`/poems/${poemId}/stanzas`, input),
@@ -96,7 +96,7 @@ export function useUserPoems(userId: string, params?: PaginationParams) {
 }
 
 export function useReviewStanza(poemId: string) {
-  var queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ stanzaId, approved }: { stanzaId: string; approved: boolean }) =>
       api.put(`/poems/${poemId}/stanzas/${stanzaId}`, { approved }),

@@ -10,13 +10,13 @@ import type { User } from '@/types/user';
 type Tab = 'magic-link' | 'passkey';
 
 export function LoginDialog() {
-  var { isLoginOpen, closeLogin } = useUIStore();
+  const { isLoginOpen, closeLogin } = useUIStore();
 
-  var [activeTab, setActiveTab] = useState<Tab>('magic-link');
-  var [email, setEmail] = useState('');
-  var [isSubmitting, setIsSubmitting] = useState(false);
-  var [successMessage, setSuccessMessage] = useState('');
-  var [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState<Tab>('magic-link');
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState('');
 
   function resetState() {
     setEmail('');
@@ -55,10 +55,10 @@ export function LoginDialog() {
     setError('');
     setIsSubmitting(true);
     try {
-      var options = await api.post<Parameters<typeof startAuthentication>[0]>('/auth/login/begin');
-      var result = await startAuthentication({ optionsJSON: options as any });
-      var user = await api.post<User>('/auth/login/finish', result);
-      var { setUser } = useAuthStore.getState();
+      const optionsJSON = await api.post<Parameters<typeof startAuthentication>[0]['optionsJSON']>('/auth/login/begin');
+      const result = await startAuthentication({ optionsJSON });
+      const user = await api.post<User>('/auth/login/finish', result);
+      const { setUser } = useAuthStore.getState();
       setUser(user);
       handleClose();
     } catch (err) {

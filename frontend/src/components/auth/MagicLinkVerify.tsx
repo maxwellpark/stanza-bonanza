@@ -4,22 +4,19 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
 
 export function MagicLinkVerify() {
-  var [searchParams] = useSearchParams();
-  var navigate = useNavigate();
-  var { fetchUser } = useAuthStore();
-  var [error, setError] = useState('');
-  var [isVerifying, setIsVerifying] = useState(true);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { fetchUser } = useAuthStore();
+  const token = searchParams.get('token');
+  const [error, setError] = useState(token ? '' : 'Missing verification token.');
+  const [isVerifying, setIsVerifying] = useState(!!token);
 
   useEffect(() => {
-    var token = searchParams.get('token');
-
     if (!token) {
-      setError('Missing verification token.');
-      setIsVerifying(false);
       return;
     }
 
-    var cancelled = false;
+    let cancelled = false;
 
     async function verify() {
       try {
@@ -47,7 +44,7 @@ export function MagicLinkVerify() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams, fetchUser, navigate]);
+  }, [token, fetchUser, navigate]);
 
   return (
     <div className="flex min-h-[50vh] items-center justify-center">

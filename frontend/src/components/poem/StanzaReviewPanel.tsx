@@ -7,7 +7,7 @@ interface Props {
 }
 
 export function StanzaReviewPanel({ poemId, pendingStanzas }: Props) {
-  var reviewStanza = useReviewStanza(poemId);
+  const reviewStanza = useReviewStanza(poemId);
 
   if (pendingStanzas.length === 0) {
     return null;

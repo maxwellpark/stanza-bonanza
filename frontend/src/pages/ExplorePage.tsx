@@ -6,7 +6,7 @@ import { PoemCard } from '@/components/poem/PoemCard';
 import { formatPoemFormat } from '@/lib/utils';
 import type { PoemFormat } from '@/types/poem';
 
-var formats: (PoemFormat | 'all')[] = [
+const formats: (PoemFormat | 'all')[] = [
   'all',
   'free_verse',
   'haiku',
@@ -19,16 +19,16 @@ var formats: (PoemFormat | 'all')[] = [
 type SortOption = 'recent' | 'popular';
 
 export function ExplorePage() {
-  var [searchParams, setSearchParams] = useSearchParams();
-  var q = searchParams.get('q') ?? '';
-  var tag = searchParams.get('tag') ?? '';
+  const [searchParams, setSearchParams] = useSearchParams();
+  const q = searchParams.get('q') ?? '';
+  const tag = searchParams.get('tag') ?? '';
 
-  var [page, setPage] = useState(1);
-  var [format, setFormat] = useState<PoemFormat | 'all'>('all');
-  var [sort, setSort] = useState<SortOption>('recent');
-  var [input, setInput] = useState(q);
+  const [page, setPage] = useState(1);
+  const [format, setFormat] = useState<PoemFormat | 'all'>('all');
+  const [sort, setSort] = useState<SortOption>('recent');
+  const [input, setInput] = useState(q);
 
-  var { data, isLoading } = usePoems({
+  const { data, isLoading } = usePoems({
     page,
     pageSize: 12,
     format: format === 'all' ? undefined : format,
@@ -39,7 +39,7 @@ export function ExplorePage() {
 
   function submitSearch(e: React.FormEvent) {
     e.preventDefault();
-    var next = new URLSearchParams(searchParams);
+    const next = new URLSearchParams(searchParams);
     if (input.trim()) {
       next.set('q', input.trim());
     } else {
@@ -50,13 +50,13 @@ export function ExplorePage() {
   }
 
   function clearTag() {
-    var next = new URLSearchParams(searchParams);
+    const next = new URLSearchParams(searchParams);
     next.delete('tag');
     setSearchParams(next);
     setPage(1);
   }
 
-  var totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
+  const totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
 
   return (
     <div>

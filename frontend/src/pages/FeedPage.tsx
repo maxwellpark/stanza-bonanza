@@ -6,10 +6,10 @@ import { useAuthStore } from '@/stores/authStore';
 import { PoemCard } from '@/components/poem/PoemCard';
 
 export function FeedPage() {
-  var { isAuthenticated, isLoading: authLoading } = useAuthStore();
-  var [page, setPage] = useState(1);
-  var { data, isLoading } = useFeed({ page, pageSize: 12 });
-  var totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useFeed({ page, pageSize: 12 });
+  const totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
 
   if (authLoading) {
     return null;

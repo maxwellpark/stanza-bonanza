@@ -8,11 +8,11 @@ interface PoemCardProps {
 }
 
 export function PoemCard({ poem }: PoemCardProps) {
-  var navigate = useNavigate();
+  const navigate = useNavigate();
 
-  var previewText = poem.stanzas?.[0]?.text ?? '';
-  var previewLines = previewText.split('\n').slice(0, 4);
-  var isTruncated = previewText.split('\n').length > 4;
+  const previewText = poem.stanzas?.[0]?.text ?? '';
+  const previewLines = previewText.split('\n').slice(0, 4);
+  const isTruncated = previewText.split('\n').length > 4;
 
   return (
     <motion.div

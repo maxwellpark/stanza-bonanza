@@ -3,7 +3,7 @@ import { useDrafts } from '@/hooks/usePoems';
 import { PoemCard } from '@/components/poem/PoemCard';
 
 export function DraftsPage() {
-  var { data, isLoading } = useDrafts();
+  const { data, isLoading } = useDrafts();
 
   return (
     <div>

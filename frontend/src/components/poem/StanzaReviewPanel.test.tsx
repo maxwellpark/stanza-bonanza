@@ -5,7 +5,7 @@ import { StanzaReviewPanel } from './StanzaReviewPanel';
 import type { Stanza } from '@/types/poem';
 
 // useReviewStanza is mocked so the component never hits the network.
-var mockMutate = vi.fn();
+const mockMutate = vi.fn();
 
 vi.mock('@/hooks/usePoems', () => ({
   useReviewStanza: vi.fn(() => ({
@@ -16,7 +16,7 @@ vi.mock('@/hooks/usePoems', () => ({
 
 import { useReviewStanza } from '@/hooks/usePoems';
 
-var pendingStanzas: Stanza[] = [
+const pendingStanzas: Stanza[] = [
   {
     id: 'stanza-1',
     poemId: 'poem-1',
@@ -66,7 +66,7 @@ beforeEach(() => {
 
 describe('StanzaReviewPanel', () => {
   it('renders nothing when there are no pending stanzas', () => {
-    var { container } = render(
+    const { container } = render(
       <StanzaReviewPanel poemId="poem-1" pendingStanzas={[]} />,
     );
     expect(container.firstChild).toBeNull();
@@ -101,7 +101,7 @@ describe('StanzaReviewPanel', () => {
   });
 
   it('calls mutate with approved: true when Approve is clicked', async () => {
-    var user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StanzaReviewPanel poemId="poem-1" pendingStanzas={[pendingStanzas[0]]} />);
 
     await user.click(screen.getByRole('button', { name: /approve/i }));
@@ -110,7 +110,7 @@ describe('StanzaReviewPanel', () => {
   });
 
   it('calls mutate with approved: false when Reject is clicked', async () => {
-    var user = userEvent.setup();
+    const user = userEvent.setup();
     render(<StanzaReviewPanel poemId="poem-1" pendingStanzas={[pendingStanzas[0]]} />);
 
     await user.click(screen.getByRole('button', { name: /reject/i }));
@@ -131,7 +131,7 @@ describe('StanzaReviewPanel', () => {
 
     render(<StanzaReviewPanel poemId="poem-1" pendingStanzas={[pendingStanzas[0]]} />);
 
-    for (var btn of screen.getAllByRole('button')) {
+    for (const btn of screen.getAllByRole('button')) {
       expect(btn).toBeDisabled();
     }
   });

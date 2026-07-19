@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components -- test-only helpers, fast refresh N/A */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
@@ -12,7 +13,7 @@ export function makeQueryClient() {
 }
 
 export function Wrapper({ children }: { children: ReactNode }) {
-  var client = makeQueryClient();
+  const client = makeQueryClient();
   return (
     <MemoryRouter>
       <QueryClientProvider client={client}>{children}</QueryClientProvider>

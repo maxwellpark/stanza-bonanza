@@ -6,16 +6,16 @@ import { PoemFormatBadge } from '@/components/poem/PoemFormatBadge';
 import { formatDate } from '@/lib/utils';
 
 export function TutorialDetailPage() {
-  var { slug } = useParams<{ slug: string }>();
-  var { data: tutorial, isLoading, isError } = useTutorial(slug ?? '');
+  const { slug } = useParams<{ slug: string }>();
+  const { data: tutorial, isLoading, isError } = useTutorial(slug ?? '');
 
   if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl animate-pulse space-y-4 py-8">
         <div className="h-8 w-2/3 rounded bg-parchment-dark" />
         <div className="space-y-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="h-4 rounded bg-parchment-dark" style={{ width: `${70 + Math.random() * 30}%` }} />
+          {[92, 78, 85, 70, 96, 74, 88, 82].map((w, i) => (
+            <div key={i} className="h-4 rounded bg-parchment-dark" style={{ width: `${w}%` }} />
           ))}
         </div>
       </div>

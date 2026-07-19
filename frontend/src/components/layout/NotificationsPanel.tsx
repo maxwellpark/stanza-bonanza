@@ -6,8 +6,8 @@ import type { Notification, NotificationType } from '@/types/social';
 import { timeAgo, cn } from '@/lib/utils';
 
 function notifLabel(n: Notification): string {
-  var actor = n.actor?.displayName ?? 'Someone';
-  var title = n.poem?.title ? `"${n.poem.title}"` : 'your poem';
+  const actor = n.actor?.displayName ?? 'Someone';
+  const title = n.poem?.title ? `"${n.poem.title}"` : 'your poem';
   switch (n.type) {
     case 'like': return `${actor} liked ${title}`;
     case 'comment': return `${actor} commented on ${title}`;
@@ -54,23 +54,26 @@ function iconColorClass(type: NotificationType) {
 }
 
 export function NotificationsPanel() {
-  var [isOpen, setIsOpen] = useState(false);
-  var containerRef = useRef<HTMLDivElement>(null);
-  var navigate = useNavigate();
-  var { data, isLoading } = useNotifications({ pageSize: 20 });
-  var markRead = useMarkNotificationsRead();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { data, isLoading } = useNotifications({ pageSize: 20 });
+  const markRead = useMarkNotificationsRead();
 
-  var notifications = data?.items ?? [];
-  var unreadCount = notifications.filter((n) => !n.read).length;
+  const notifications = data?.items ?? [];
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
-    var ids = notifications.filter((n) => !n.read).map((n) => n.id);
+    const ids = notifications.filter((n) => !n.read).map((n) => n.id);
     if (ids.length > 0) {
       markRead.mutate(ids);
     }
+    // Only when the panel opens; re-running on every notifications change would
+    // re-mark repeatedly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   useEffect(() => {

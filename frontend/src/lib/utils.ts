@@ -14,21 +14,21 @@ export function formatDate(dateStr: string): string {
 }
 
 export function timeAgo(dateStr: string): string {
-  var seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
 
   if (seconds < 60) {
     return 'just now';
   }
   if (seconds < 3600) {
-    var minutes = Math.floor(seconds / 60);
+    const minutes = Math.floor(seconds / 60);
     return `${minutes}m ago`;
   }
   if (seconds < 86400) {
-    var hours = Math.floor(seconds / 3600);
+    const hours = Math.floor(seconds / 3600);
     return `${hours}h ago`;
   }
   if (seconds < 604800) {
-    var days = Math.floor(seconds / 86400);
+    const days = Math.floor(seconds / 86400);
     return `${days}d ago`;
   }
   return formatDate(dateStr);

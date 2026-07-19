@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { PoemCard } from '@/components/poem/PoemCard';
 
-var container = {
+const container = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
@@ -13,16 +13,16 @@ var container = {
   },
 };
 
-var item = {
+const item = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0 },
 };
 
 export function HomePage() {
-  var { isAuthenticated } = useAuthStore();
-  var { openLogin } = useUIStore();
-  var navigate = useNavigate();
-  var { data, isLoading } = useExplore({ page: 1, pageSize: 6 });
+  const { isAuthenticated } = useAuthStore();
+  const { openLogin } = useUIStore();
+  const navigate = useNavigate();
+  const { data, isLoading } = useExplore({ page: 1, pageSize: 6 });
 
   function handleStartWriting() {
     if (isAuthenticated) {

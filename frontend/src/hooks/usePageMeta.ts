@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 
 function setMeta(selector: string, attr: string, value: string) {
-  var el = document.head.querySelector<HTMLMetaElement>(selector);
+  let el = document.head.querySelector<HTMLMetaElement>(selector);
   if (!el) {
     el = document.createElement('meta');
-    var [name, key] = attr.split('=');
+    const [name, key] = attr.split('=');
     el.setAttribute(name, key.replace(/"/g, ''));
     document.head.appendChild(el);
   }
@@ -16,7 +16,7 @@ function setMeta(selector: string, attr: string, value: string) {
 // function. Restores the site defaults on unmount.
 export function usePageMeta(title: string, description?: string) {
   useEffect(() => {
-    var previousTitle = document.title;
+    const previousTitle = document.title;
     document.title = title;
 
     if (description) {
