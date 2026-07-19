@@ -20,8 +20,8 @@ import (
 
 type mockPoemService struct{ mock.Mock }
 
-func (m *mockPoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int) (*domain.Poem, error) {
-	args := m.Called(ctx, userID, title, description, format, approvalMode, maxStanzas)
+func (m *mockPoemService) Create(ctx context.Context, userID uuid.UUID, title, description string, format domain.PoemFormat, approvalMode domain.ApprovalMode, maxStanzas *int, tags []string) (*domain.Poem, error) {
+	args := m.Called(ctx, userID, title, description, format, approvalMode, maxStanzas, tags)
 	p, _ := args.Get(0).(*domain.Poem)
 	return p, args.Error(1)
 }
@@ -30,8 +30,8 @@ func (m *mockPoemService) Get(ctx context.Context, id, viewerID uuid.UUID) (*dom
 	p, _ := args.Get(0).(*domain.Poem)
 	return p, args.Error(1)
 }
-func (m *mockPoemService) List(ctx context.Context, page domain.PaginationParams, format, sort string) ([]domain.Poem, int, error) {
-	args := m.Called(ctx, page, format, sort)
+func (m *mockPoemService) List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error) {
+	args := m.Called(ctx, page, format, sort, q, tag)
 	poems, _ := args.Get(0).([]domain.Poem)
 	return poems, args.Int(1), args.Error(2)
 }
@@ -40,8 +40,8 @@ func (m *mockPoemService) ListByUser(ctx context.Context, userID uuid.UUID, page
 	poems, _ := args.Get(0).([]domain.Poem)
 	return poems, args.Int(1), args.Error(2)
 }
-func (m *mockPoemService) Update(ctx context.Context, userID, poemID uuid.UUID, title, description string) error {
-	return m.Called(ctx, userID, poemID, title, description).Error(0)
+func (m *mockPoemService) Update(ctx context.Context, userID, poemID uuid.UUID, title, description string, tags []string) error {
+	return m.Called(ctx, userID, poemID, title, description, tags).Error(0)
 }
 func (m *mockPoemService) Delete(ctx context.Context, userID, poemID uuid.UUID) error {
 	return m.Called(ctx, userID, poemID).Error(0)
@@ -87,7 +87,7 @@ func TestPoemHandler_Create_ValidBody(t *testing.T) {
 
 	userID := uuid.New()
 	poem := &domain.Poem{ID: uuid.New(), Title: "My Poem", Format: domain.FormatFreeVerse}
-	svc.On("Create", mock.Anything, userID, "My Poem", "", domain.FormatFreeVerse, domain.ApprovalOpen, (*int)(nil)).Return(poem, nil)
+	svc.On("Create", mock.Anything, userID, "My Poem", "", domain.FormatFreeVerse, domain.ApprovalOpen, (*int)(nil), ([]string)(nil)).Return(poem, nil)
 
 	body := `{"title":"My Poem","format":"free_verse"}`
 	r := httptest.NewRequest(http.MethodPost, "/poems", bytes.NewBufferString(body))

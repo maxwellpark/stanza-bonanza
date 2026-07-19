@@ -24,8 +24,8 @@ func (m *mockPoemStore) GetByID(ctx context.Context, id uuid.UUID) (*domain.Poem
 	p, _ := args.Get(0).(*domain.Poem)
 	return p, args.Error(1)
 }
-func (m *mockPoemStore) List(ctx context.Context, page domain.PaginationParams, format, sort string) ([]domain.Poem, int, error) {
-	args := m.Called(ctx, page, format, sort)
+func (m *mockPoemStore) List(ctx context.Context, page domain.PaginationParams, format, sort, q, tag string) ([]domain.Poem, int, error) {
+	args := m.Called(ctx, page, format, sort, q, tag)
 	poems, _ := args.Get(0).([]domain.Poem)
 	return poems, args.Int(1), args.Error(2)
 }
@@ -87,8 +87,42 @@ func (m *mockPoemNotifStore) Create(ctx context.Context, notif *domain.Notificat
 	return m.Called(ctx, notif).Error(0)
 }
 
+// mockTagStore
+
+type mockTagStore struct{ mock.Mock }
+
+func (m *mockTagStore) SetForPoem(ctx context.Context, poemID uuid.UUID, names []string) error {
+	return m.Called(ctx, poemID, names).Error(0)
+}
+func (m *mockTagStore) ListForPoem(ctx context.Context, poemID uuid.UUID) ([]string, error) {
+	args := m.Called(ctx, poemID)
+	tags, _ := args.Get(0).([]string)
+	return tags, args.Error(1)
+}
+func (m *mockTagStore) ListForPoems(ctx context.Context, poemIDs []uuid.UUID) (map[uuid.UUID][]string, error) {
+	args := m.Called(ctx, poemIDs)
+	tags, _ := args.Get(0).(map[uuid.UUID][]string)
+	return tags, args.Error(1)
+}
+
 func newPoemSvc(poems *mockPoemStore, stanzas *mockStanzaStore, notifs *mockPoemNotifStore) *PoemService {
 	return &PoemService{poems: poems, stanzas: stanzas, notifs: notifs}
+}
+
+func TestPoemService_Create_WithTags(t *testing.T) {
+	poems := &mockPoemStore{}
+	tags := &mockTagStore{}
+	svc := newPoemSvc(poems, &mockStanzaStore{}, &mockPoemNotifStore{})
+	svc.tags = tags
+
+	poems.On("Create", mock.Anything, mock.AnythingOfType("*domain.Poem")).Return(nil)
+	tags.On("SetForPoem", mock.Anything, mock.Anything, []string{"nature", "haiku"}).Return(nil)
+	tags.On("ListForPoem", mock.Anything, mock.Anything).Return([]string{"haiku", "nature"}, nil)
+
+	poem, err := svc.Create(context.Background(), uuid.New(), "T", "", domain.FormatHaiku, domain.ApprovalOpen, nil, []string{"nature", "haiku"})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"haiku", "nature"}, poem.Tags)
+	tags.AssertCalled(t, "SetForPoem", mock.Anything, mock.Anything, []string{"nature", "haiku"})
 }
 
 // Create tests
@@ -102,7 +136,7 @@ func TestPoemService_Create_Success(t *testing.T) {
 	userID := uuid.New()
 	poems.On("Create", mock.Anything, mock.AnythingOfType("*domain.Poem")).Return(nil)
 
-	poem, err := svc.Create(context.Background(), userID, "Test Poem", "a poem", domain.FormatFreeVerse, domain.ApprovalOpen, nil)
+	poem, err := svc.Create(context.Background(), userID, "Test Poem", "a poem", domain.FormatFreeVerse, domain.ApprovalOpen, nil, nil)
 	require.NoError(t, err)
 	assert.Equal(t, "Test Poem", poem.Title)
 	assert.Equal(t, userID, poem.AuthorID)
@@ -115,7 +149,7 @@ func TestPoemService_Create_StoreError(t *testing.T) {
 
 	poems.On("Create", mock.Anything, mock.Anything).Return(errors.New("db error"))
 
-	_, err := svc.Create(context.Background(), uuid.New(), "Title", "", domain.FormatHaiku, domain.ApprovalOpen, nil)
+	_, err := svc.Create(context.Background(), uuid.New(), "Title", "", domain.FormatHaiku, domain.ApprovalOpen, nil, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "creating poem")
 }
