@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePoems } from '@/hooks/usePoems';
 import { PoemCard } from '@/components/poem/PoemCard';
@@ -18,22 +19,71 @@ var formats: (PoemFormat | 'all')[] = [
 type SortOption = 'recent' | 'popular';
 
 export function ExplorePage() {
+  var [searchParams, setSearchParams] = useSearchParams();
+  var q = searchParams.get('q') ?? '';
+  var tag = searchParams.get('tag') ?? '';
+
   var [page, setPage] = useState(1);
   var [format, setFormat] = useState<PoemFormat | 'all'>('all');
   var [sort, setSort] = useState<SortOption>('recent');
+  var [input, setInput] = useState(q);
 
   var { data, isLoading } = usePoems({
     page,
     pageSize: 12,
     format: format === 'all' ? undefined : format,
     sort,
+    q: q || undefined,
+    tag: tag || undefined,
   });
+
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    var next = new URLSearchParams(searchParams);
+    if (input.trim()) {
+      next.set('q', input.trim());
+    } else {
+      next.delete('q');
+    }
+    setSearchParams(next);
+    setPage(1);
+  }
+
+  function clearTag() {
+    var next = new URLSearchParams(searchParams);
+    next.delete('tag');
+    setSearchParams(next);
+    setPage(1);
+  }
 
   var totalPages = data ? Math.ceil(data.totalCount / data.pageSize) : 0;
 
   return (
     <div>
       <h1 className="mb-6 font-serif text-3xl font-bold text-ink">Explore</h1>
+
+      <form onSubmit={submitSearch} className="mb-6 flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Search poems by title, description or author..."
+          className="w-full rounded-lg border border-parchment-dark bg-white px-4 py-2 font-sans text-sm text-ink outline-none transition-colors focus:border-accent"
+        />
+        <button type="submit" className="btn-primary">Search</button>
+      </form>
+
+      {tag && (
+        <div className="mb-6 flex items-center gap-2 font-sans text-sm text-feather">
+          <span>Filtered by tag:</span>
+          <button
+            onClick={clearTag}
+            className="flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-white"
+          >
+            #{tag} <span aria-hidden>✕</span>
+          </button>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {formats.map((f) => (
