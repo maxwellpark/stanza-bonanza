@@ -9,7 +9,9 @@ import (
 type User struct {
 	ID          uuid.UUID `json:"id"`
 	DisplayName string    `json:"displayName"`
-	Email       string    `json:"email"`
+	// Email is the login id; never serialize it on the shared User (it embeds
+	// into poems, followers, public profiles). /me returns it via meResponse.
+	Email       string    `json:"-"`
 	Bio         string    `json:"bio"`
 	AvatarURL   string    `json:"avatarUrl"`
 	IsVerified  bool      `json:"isVerified"`

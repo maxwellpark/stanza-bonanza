@@ -221,7 +221,14 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, http.StatusOK, user)
+	// Only the owner sees their own email.
+	respondJSON(w, http.StatusOK, meResponse{User: user, Email: user.Email})
+}
+
+// meResponse re-adds email (json:"-" on User) for the authenticated owner only.
+type meResponse struct {
+	*domain.User
+	Email string `json:"email"`
 }
 
 func (h *AuthHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
