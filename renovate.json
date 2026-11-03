@@ -6,24 +6,16 @@
   "prConcurrentLimit": 5,
   "packageRules": [
     {
-      "description": "One grouped PR for all non-major updates, auto-merged once CI is green (and after the 7-day maturity wait)",
+      "description": "One grouped PR for all non-major updates (after the 7-day maturity wait). No automerge: Actions is off, so nothing gates a merge.",
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "groupName": "non-major dependencies",
-      "automerge": true
-    },
-    {
-      "description": "Majors always need manual review",
-      "matchUpdateTypes": ["major"],
-      "automerge": false
+      "groupName": "non-major dependencies"
     }
   ],
   "lockFileMaintenance": {
     "enabled": true,
-    "automerge": true,
     "schedule": ["before 6am on monday"]
   },
   "vulnerabilityAlerts": {
-    "labels": ["security"],
-    "automerge": true
+    "labels": ["security"]
   }
 }
