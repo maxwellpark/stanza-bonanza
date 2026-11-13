@@ -1,21 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":dependencyDashboard"],
-  "minimumReleaseAge": "7 days",
-  "schedule": ["before 6am on monday"],
-  "prConcurrentLimit": 5,
-  "packageRules": [
-    {
-      "description": "One grouped PR for all non-major updates (after the 7-day maturity wait). No automerge: Actions is off, so nothing gates a merge.",
-      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
-      "groupName": "non-major dependencies"
-    }
-  ],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["before 6am on monday"]
-  },
-  "vulnerabilityAlerts": {
-    "labels": ["security"]
-  }
+  "extends": ["github>maxwellpark/renovate-config"]
 }
